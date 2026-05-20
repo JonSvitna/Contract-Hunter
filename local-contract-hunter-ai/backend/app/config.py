@@ -1,0 +1,32 @@
+from __future__ import annotations
+
+import os
+from dataclasses import dataclass
+from pathlib import Path
+
+
+@dataclass
+class Settings:
+    app_name: str = "Local Contract Hunter AI"
+    api_prefix: str = "/api"
+    cors_origins: list[str] = None
+    db_url: str = "sqlite:///./local_contract_hunter.db"
+    openai_api_key: str | None = None
+    openai_model: str = "gpt-4o-mini"
+    search_delay_seconds: float = 2.0
+    config_dir: Path = None
+
+    def __post_init__(self) -> None:
+        origins = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
+        self.cors_origins = [origin.strip() for origin in origins if origin.strip()]
+        self.db_url = os.getenv("DATABASE_URL", self.db_url)
+        self.openai_api_key = os.getenv("OPENAI_API_KEY")
+        self.openai_model = os.getenv("OPENAI_MODEL", self.openai_model)
+        self.search_delay_seconds = float(
+            os.getenv("SEARCH_DELAY_SECONDS", str(self.search_delay_seconds))
+        )
+        base_dir = Path(__file__).resolve().parents[2]
+        self.config_dir = base_dir / "config"
+
+
+settings = Settings()

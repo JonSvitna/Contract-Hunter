@@ -1,0 +1,38 @@
+name: Sean Murrill
+company: Vulnaguard LLC
+location: Maryland
+profile: Maryland-based solo cybersecurity consultant.
+skills:
+  - SOC 2 readiness support
+  - NIST framework alignment
+  - ISO 27001 familiarity
+  - Vulnerability scanning and assessment
+  - Administrative and technical audits
+  - IT and cyber risk assessments
+  - Compliance documentation
+  - Technical and B2B communication
+certifications:
+  - Security+
+  - PenTest+
+  - AZ-900
+education:
+  - MS Computer Forensics
+  - BS Computer Information Systems
+target_contract_size:
+  preferred_min: 2000
+  preferred_max: 25000
+  acceptable_max: 50000
+preferred_work:
+  - vulnerability assessment
+  - NIST gap assessment
+  - CMMC readiness
+  - policy review
+  - security awareness training
+  - IT risk assessment
+  - GRC and compliance documentation
+avoid:
+  - 24/7 SOC
+  - large staffing contracts
+  - large MSP operations
+  - full infrastructure management
+  - massive implementation projects

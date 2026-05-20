@@ -1,0 +1,75 @@
+sources:
+  - name: Baltimore County Procurement
+    url: https://www.baltimorecountymd.gov/departments/purchasing
+    source_type: generic
+    active: true
+    search_delay_seconds: 2.0
+    notes: County source
+
+  - name: Howard County Procurement
+    url: https://www.howardcountymd.gov/procurement
+    source_type: generic
+    active: true
+    search_delay_seconds: 2.0
+    notes: County source
+
+  - name: Anne Arundel County Purchasing
+    url: https://www.aacounty.org/departments/purchasing/
+    source_type: generic
+    active: true
+    search_delay_seconds: 2.0
+
+  - name: Harford County Procurement
+    url: https://www.harfordcountymd.gov/390/Procurement
+    source_type: generic
+    active: true
+    search_delay_seconds: 2.0
+
+  - name: Montgomery County Procurement
+    url: https://www.montgomerycountymd.gov/procurement/
+    source_type: generic
+    active: true
+    search_delay_seconds: 2.0
+
+  - name: Prince George's County Procurement
+    url: https://www.princegeorgescountymd.gov/departments-offices/central-services/purchasing
+    source_type: generic
+    active: true
+    search_delay_seconds: 2.0
+
+  - name: Frederick County Procurement
+    url: https://www.frederickcountymd.gov/176/Procurement-Contracts
+    source_type: generic
+    active: true
+    search_delay_seconds: 2.0
+
+  - name: Carroll County Bids and Proposals
+    url: https://www.carrollcountymd.gov/government/directory/commissioners/office-of-procurement/
+    source_type: generic
+    active: true
+    search_delay_seconds: 2.0
+
+  - name: Maryland eMMA
+    url: https://emma.maryland.gov/
+    source_type: emma
+    active: true
+    search_delay_seconds: 3.0
+    notes: Secondary state-level source only
+
+  - name: Baltimore City Public Schools Procurement
+    url: https://www.baltimorecityschools.org/procurement
+    source_type: generic
+    active: true
+    search_delay_seconds: 2.0
+
+  - name: Montgomery County Public Schools Procurement
+    url: https://www.montgomeryschoolsmd.org/departments/procurement/
+    source_type: generic
+    active: true
+    search_delay_seconds: 2.0
+
+  - name: Howard County Library System Procurement
+    url: https://www.hclibrary.org/about-us/requests-for-proposals/
+    source_type: generic
+    active: true
+    search_delay_seconds: 2.0

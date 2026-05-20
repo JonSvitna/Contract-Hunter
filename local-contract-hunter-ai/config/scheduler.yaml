@@ -1,0 +1,5 @@
+enabled: false
+frequency_minutes: 1440
+max_runs_per_day: 2
+jitter_seconds: 30
+notes: Disable by default; can be toggled in app settings.

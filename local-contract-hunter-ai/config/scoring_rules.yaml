@@ -1,0 +1,20 @@
+weights:
+  skill_match: 0.25
+  solo_fit: 0.25
+  revenue_fit: 0.20
+  local_fit: 0.30
+penalties:
+  complexity_factor: 0.20
+hard_penalties:
+  - 24/7 support
+  - SOC monitoring
+  - large staffing requirements
+  - federal mega contract
+  - statewide mega contract
+recommendation_bands:
+  pursue_min: 75
+  watch_min: 55
+deadline_rules:
+  expired: 100
+  lt_3_days: 90
+  lt_7_days: 65

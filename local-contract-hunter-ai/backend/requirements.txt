@@ -1,0 +1,8 @@
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+SQLAlchemy==2.0.36
+pydantic==2.10.3
+PyYAML==6.0.2
+python-dateutil==2.9.0.post0
+playwright==1.49.1
+openai==1.58.1
