@@ -1,4 +1,12 @@
-import { Opportunity, SchedulerConfig, Source } from "@/lib/types";
+import {
+  Opportunity,
+  SchedulerConfig,
+  SchedulerStatus,
+  SearchRunResult,
+  Source,
+  ThrottleConfig,
+  ThrottleControl,
+} from "@/lib/types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
 
@@ -33,9 +41,25 @@ export const api = {
     fetchJson<{ created: number; duplicates_skipped: number; sources: number }>("/api/search/run", {
       method: "POST"
     }),
+  runSearchNow: () =>
+    fetchJson<SearchRunResult>("/api/search/run-now", {
+      method: "POST"
+    }),
   getSources: () => fetchJson<Source[]>("/api/sources"),
   getConfigPreview: () => fetchJson<{ business_profile: unknown; keywords: string[] }>("/api/search/config"),
+  getThrottleConfig: () => fetchJson<ThrottleConfig>("/api/search/throttle"),
+  updateThrottleDefaults: (payload: Partial<ThrottleControl>) =>
+    fetchJson<ThrottleConfig>("/api/search/throttle/defaults", {
+      method: "PATCH",
+      body: JSON.stringify(payload)
+    }),
+  updateThrottleForSource: (sourceId: number, payload: Partial<ThrottleControl>) =>
+    fetchJson<ThrottleConfig>(`/api/search/throttle/source/${sourceId}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload)
+    }),
   getSchedulerConfig: () => fetchJson<SchedulerConfig>("/api/scheduler"),
+  getSchedulerStatus: () => fetchJson<SchedulerStatus>("/api/scheduler/status"),
   updateSchedulerConfig: (payload: Partial<SchedulerConfig>) =>
     fetchJson<SchedulerConfig>("/api/scheduler", {
       method: "PATCH",

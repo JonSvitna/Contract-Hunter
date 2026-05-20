@@ -13,6 +13,7 @@ class Settings:
     db_url: str = "sqlite:///./local_contract_hunter.db"
     openai_api_key: str | None = None
     openai_model: str = "gpt-4o-mini"
+    cron_webhook_token: str | None = None
     search_delay_seconds: float = 2.0
     config_dir: Path = None
 
@@ -22,6 +23,7 @@ class Settings:
         self.db_url = os.getenv("DATABASE_URL", self.db_url)
         self.openai_api_key = os.getenv("OPENAI_API_KEY")
         self.openai_model = os.getenv("OPENAI_MODEL", self.openai_model)
+        self.cron_webhook_token = os.getenv("CRON_WEBHOOK_TOKEN")
         self.search_delay_seconds = float(
             os.getenv("SEARCH_DELAY_SECONDS", str(self.search_delay_seconds))
         )

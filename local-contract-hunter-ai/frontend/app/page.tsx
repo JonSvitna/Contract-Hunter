@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 
 export default async function DashboardPage() {
   const opportunities = await api.getOpportunities().catch(() => []);
+  const schedulerStatus = await api.getSchedulerStatus().catch(() => null);
 
   return (
     <div className="space-y-5">
@@ -25,6 +26,18 @@ export default async function DashboardPage() {
       </section>
 
       <DashboardSummary opportunities={opportunities} />
+
+      {schedulerStatus && (
+        <section className="card">
+          <h3 className="text-base font-semibold text-ink">Automation status</h3>
+          <div className="mt-2 grid gap-2 text-sm text-slate-700 sm:grid-cols-2 lg:grid-cols-4">
+            <div>Status: <span className="font-medium">{schedulerStatus.enabled ? "Enabled" : "Disabled"}</span></div>
+            <div>Can run now: <span className="font-medium">{schedulerStatus.can_run_now ? "Yes" : "No"}</span></div>
+            <div>Reason: <span className="font-medium">{schedulerStatus.reason}</span></div>
+            <div>Next run: <span className="font-medium">{schedulerStatus.next_run_at || "Pending"}</span></div>
+          </div>
+        </section>
+      )}
 
       <section>
         <h3 className="mb-3 text-lg font-semibold text-ink">Top opportunities</h3>

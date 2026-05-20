@@ -61,8 +61,14 @@ Open `http://localhost:3000`.
 - `PATCH /api/opportunities/{id}/status`
 - `POST /api/opportunities/{id}/score`
 - `POST /api/search/run`
+- `POST /api/search/run-now`
+- `POST /api/search/cron-run` (requires `X-Cron-Token` header)
 - `GET /api/search/config`
+- `GET /api/search/throttle`
+- `PATCH /api/search/throttle/defaults`
+- `PATCH /api/search/throttle/source/{source_id}`
 - `GET /api/scheduler`
+- `GET /api/scheduler/status`
 - `PATCH /api/scheduler`
 - `POST /api/scheduler/toggle`
 - `GET /api/sources`
@@ -75,6 +81,23 @@ Open `http://localhost:3000`.
 - Set `enabled: false` to disable automated worker runs.
 - Set `frequency_minutes` to increase or reduce run cadence.
 - Settings page includes one-click controls: Turn On/Off, Hourly, 12 hours, Daily.
+- Settings page also supports custom frequency and max-runs-per-day values.
+- Worker enforces daily run caps and records `last_run_at`, `runs_today`, and `last_result`.
+- Settings page includes `Run Search Now`, which still respects scheduler enable/limit guardrails and logs results inline.
+
+## Cron security
+
+- Set `CRON_WEBHOOK_TOKEN` in backend environment.
+- Call `POST /api/search/cron-run` with `X-Cron-Token: <token>`.
+
+## Source throttle controls
+
+- Throttle config is stored in `config/scraper_controls.yaml`.
+- Default and per-source controls include:
+   - `max_candidate_links`
+   - `page_timeout_ms`
+   - `body_timeout_ms`
+- Settings page can tune defaults and quickly increase/decrease source-specific link limits.
 
 ## Launch guidance: Vercel + Railway
 
@@ -115,3 +138,5 @@ Open `http://localhost:3000`.
 ## Future
 
 See [docs/ROADMAP.md](docs/ROADMAP.md) for planned expansion.
+
+For deployment execution details, see [docs/VERCEL_RAILWAY_LAUNCH_PLAYBOOK.md](docs/VERCEL_RAILWAY_LAUNCH_PLAYBOOK.md).

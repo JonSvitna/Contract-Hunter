@@ -1,0 +1,5 @@
+defaults:
+  max_candidate_links: 120
+  page_timeout_ms: 20000
+  body_timeout_ms: 5000
+by_source: {}

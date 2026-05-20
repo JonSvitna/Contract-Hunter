@@ -32,15 +32,21 @@ def load_business_profile() -> dict:
 
 def load_scheduler_config() -> dict:
     payload = _read_yaml(settings.config_dir / "scheduler.yaml")
+    defaults = {
+        "enabled": False,
+        "frequency_minutes": 1440,
+        "max_runs_per_day": 2,
+        "jitter_seconds": 30,
+        "last_run_at": None,
+        "last_run_day": None,
+        "runs_today": 0,
+        "last_result": None,
+        "notes": "Disable by default; can be toggled in app settings.",
+    }
     if not payload:
-        return {
-            "enabled": False,
-            "frequency_minutes": 1440,
-            "max_runs_per_day": 2,
-            "jitter_seconds": 30,
-            "notes": "Disable by default; can be toggled in app settings.",
-        }
-    return payload
+        return defaults
+    merged = {**defaults, **payload}
+    return merged
 
 
 def save_scheduler_config(config: dict) -> dict:
@@ -48,6 +54,39 @@ def save_scheduler_config(config: dict) -> dict:
     with path.open("w", encoding="utf-8") as f:
         yaml.safe_dump(config, f, sort_keys=False)
     return config
+
+
+def load_throttle_config() -> dict:
+    payload = _read_yaml(settings.config_dir / "scraper_controls.yaml")
+    defaults = {
+        "defaults": {
+            "max_candidate_links": 120,
+            "page_timeout_ms": 20000,
+            "body_timeout_ms": 5000,
+        },
+        "by_source": {},
+    }
+    if not payload:
+        return defaults
+    merged = {
+        "defaults": {**defaults["defaults"], **payload.get("defaults", {})},
+        "by_source": payload.get("by_source", {}),
+    }
+    return merged
+
+
+def save_throttle_config(config: dict) -> dict:
+    path = settings.config_dir / "scraper_controls.yaml"
+    with path.open("w", encoding="utf-8") as f:
+        yaml.safe_dump(config, f, sort_keys=False)
+    return config
+
+
+def get_effective_throttle_for_source(source_name: str) -> dict:
+    config = load_throttle_config()
+    defaults = config.get("defaults", {})
+    source_override = config.get("by_source", {}).get(source_name, {})
+    return {**defaults, **source_override}
 
 
 def seed_sources_if_empty(db: Session) -> int:
