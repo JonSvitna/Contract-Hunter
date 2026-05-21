@@ -68,9 +68,9 @@ def excel_serial_to_date(value: Any) -> date | None:
 
 
 def build_emma_opportunity_url(bpm_id: str) -> str:
-    digits = "".join(ch for ch in bpm_id if ch.isdigit())
-    opportunity_id = str(int(digits)) if digits else bpm_id
-    return f"https://emma.maryland.gov/page.aspx/en/bpm/process_manage_extranet/{opportunity_id}"
+    # eMMA detail URLs use an internal process id, not the public BPM id from
+    # Excel exports. Linking to a guessed process id can open a different post.
+    return public_solicitations_url(EMMA_SOURCE_URL)
 
 
 def _normalize_header(value: Any) -> str:
@@ -182,18 +182,20 @@ def _row_hash(item: dict) -> str:
 
 
 def _find_duplicate(db: Session, item: dict) -> Opportunity | None:
+    duplicate_filters = [
+        and_(
+            Opportunity.title == item.get("title"),
+            Opportunity.agency == item.get("agency"),
+            Opportunity.due_date == item.get("due_date"),
+        )
+    ]
+    opportunity_url = item.get("opportunity_url")
+    if opportunity_url and opportunity_url != item.get("source_url"):
+        duplicate_filters.append(Opportunity.opportunity_url == opportunity_url)
+
     return (
         db.query(Opportunity)
-        .filter(
-            or_(
-                Opportunity.opportunity_url == item.get("opportunity_url"),
-                and_(
-                    Opportunity.title == item.get("title"),
-                    Opportunity.agency == item.get("agency"),
-                    Opportunity.due_date == item.get("due_date"),
-                ),
-            )
-        )
+        .filter(or_(*duplicate_filters))
         .first()
     )
 

@@ -103,9 +103,9 @@ def test_excel_serial_to_date_converts_emma_export_number():
     assert excel_serial_to_date(46168.75).isoformat() == "2026-05-26"
 
 
-def test_build_emma_opportunity_url_uses_bpm_numeric_id():
+def test_build_emma_opportunity_url_uses_public_search_page_not_guessed_detail_id():
     assert build_emma_opportunity_url("BPM056393") == (
-        "https://emma.maryland.gov/page.aspx/en/bpm/process_manage_extranet/56393"
+        "https://emma.maryland.gov/page.aspx/en/rfp/request_browse_public"
     )
 
 
@@ -204,6 +204,34 @@ def test_import_emma_excel_upload_reupload_marks_unchanged(db_session):
         .action
         == "unchanged"
     )
+
+
+def test_import_emma_excel_upload_creates_multiple_open_rows_with_shared_public_url(db_session):
+    payload = workbook_bytes(
+        [
+            emma_row(),
+            emma_row(
+                bpm_id="BPM057140",
+                title="Western Section Highway Department Fuel Center",
+                agency="Maryland Transportation Authority",
+            ),
+        ]
+    )
+
+    result = import_emma_excel_upload(
+        db_session,
+        payload,
+        filename="Public_Solicitations.xlsx",
+        profile={"name": "Sean"},
+    )
+
+    rows = db_session.query(Opportunity).order_by(Opportunity.external_id).all()
+    assert result["created"] == 2
+    assert result["skipped"] == 0
+    assert [row.external_id for row in rows] == ["BPM056393", "BPM057140"]
+    assert {row.opportunity_url for row in rows} == {
+        "https://emma.maryland.gov/page.aspx/en/rfp/request_browse_public"
+    }
 
 
 def test_import_emma_excel_upload_skips_duplicate_ids_within_same_workbook(db_session):
