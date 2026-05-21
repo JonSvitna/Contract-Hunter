@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.models.opportunity import Opportunity
 from app.models.source import Source
 from app.scrapers.emma_scraper import EmmaScraper
@@ -61,7 +62,7 @@ def get_scraper_for_source(source: Source):
         "body_timeout_ms": int(throttle.get("body_timeout_ms", 5000)),
     }
     if source.source_type.lower() == "emma":
-        return EmmaScraper(**kwargs)
+        return EmmaScraper(**kwargs, browser_channel=settings.playwright_browser_channel)
     return GenericProcurementScraper(**kwargs)
 
 

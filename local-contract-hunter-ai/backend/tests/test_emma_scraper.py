@@ -92,6 +92,44 @@ def test_manual_review_result_names_emma_failure():
     assert "No public solicitation links" in item["description_snippet"]
 
 
+def test_launch_browser_uses_configured_chrome_channel():
+    class FakeChromium:
+        def __init__(self):
+            self.launch_options = None
+
+        def launch(self, **kwargs):
+            self.launch_options = kwargs
+            return object()
+
+    fake_chromium = FakeChromium()
+
+    class FakePlaywright:
+        chromium = fake_chromium
+
+    EmmaScraper(browser_channel="chrome")._launch_browser(FakePlaywright())
+
+    assert fake_chromium.launch_options == {"headless": True, "channel": "chrome"}
+
+
+def test_launch_browser_defaults_to_bundled_chromium():
+    class FakeChromium:
+        def __init__(self):
+            self.launch_options = None
+
+        def launch(self, **kwargs):
+            self.launch_options = kwargs
+            return object()
+
+    fake_chromium = FakeChromium()
+
+    class FakePlaywright:
+        chromium = fake_chromium
+
+    EmmaScraper()._launch_browser(FakePlaywright())
+
+    assert fake_chromium.launch_options == {"headless": True}
+
+
 def test_scrape_returns_manual_review_when_browser_launch_fails(monkeypatch):
     class FakeChromium:
         def launch(self, headless: bool):

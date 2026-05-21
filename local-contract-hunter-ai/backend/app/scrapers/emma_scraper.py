@@ -112,11 +112,19 @@ class EmmaScraper(BaseScraper):
         max_candidate_links: int = 120,
         page_timeout_ms: int = 20000,
         body_timeout_ms: int = 5000,
+        browser_channel: str | None = None,
     ) -> None:
         self.delay_seconds = delay_seconds
         self.max_candidate_links = max_candidate_links
         self.page_timeout_ms = page_timeout_ms
         self.body_timeout_ms = body_timeout_ms
+        self.browser_channel = browser_channel
+
+    def _launch_browser(self, playwright):
+        launch_options = {"headless": True}
+        if self.browser_channel:
+            launch_options["channel"] = self.browser_channel
+        return playwright.chromium.launch(**launch_options)
 
     def manual_review_result(self, source_name: str, source_url: str, reason: str) -> dict:
         return {
@@ -234,7 +242,7 @@ class EmmaScraper(BaseScraper):
             browser = None
             context = None
             try:
-                browser = p.chromium.launch(headless=True)
+                browser = self._launch_browser(p)
                 context = browser.new_context()
                 page = context.new_page()
                 target_url = public_solicitations_url(source_url)

@@ -15,6 +15,7 @@ class Settings:
     openai_model: str = "gpt-4o-mini"
     cron_webhook_token: str | None = None
     search_delay_seconds: float = 2.0
+    playwright_browser_channel: str | None = None
     config_dir: Path = None
 
     def __post_init__(self) -> None:
@@ -27,6 +28,8 @@ class Settings:
         self.search_delay_seconds = float(
             os.getenv("SEARCH_DELAY_SECONDS", str(self.search_delay_seconds))
         )
+        browser_channel = os.getenv("PLAYWRIGHT_BROWSER_CHANNEL")
+        self.playwright_browser_channel = browser_channel.strip() or None if browser_channel else None
         base_dir = Path(__file__).resolve().parents[2]
         self.config_dir = base_dir / "config"
 
