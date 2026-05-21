@@ -53,6 +53,8 @@ export default function OpportunityDetailPage() {
         <div className="mt-4 grid gap-2 text-sm text-slate-700">
           <div>Due date: {item.due_date || "Unknown"}</div>
           <div>Current status: {item.status}</div>
+          <div>Extraction confidence: {Math.round(item.extraction_confidence * 100)}%</div>
+          <div>Manual review needed: {item.manual_review_needed ? "Yes" : "No"}</div>
           <div>Source URL: <a className="underline" href={item.source_url} target="_blank" rel="noreferrer">Open source</a></div>
           {item.opportunity_url && <div>Opportunity URL: <a className="underline" href={item.opportunity_url} target="_blank" rel="noreferrer">Open posting</a></div>}
           <div>Summary: {item.description_snippet || "No extracted snippet"}</div>

@@ -25,15 +25,30 @@ export function OpportunityCard({ item }: { item: Opportunity }) {
         <span>Status: {item.status}</span>
         <span>Due: {item.due_date || "Unknown"}</span>
         <span>Confidence: {Math.round(item.extraction_confidence * 100)}%</span>
+        {item.manual_review_needed && (
+          <span className="rounded-full bg-amber-100 px-2 py-0.5 font-medium text-amber-800">
+            Manual review
+          </span>
+        )}
       </div>
 
-      <div className="mt-4">
+      <div className="mt-4 flex flex-wrap gap-2">
         <Link
           href={`/opportunities/${item.id}`}
           className="inline-flex rounded-md bg-navy px-3 py-2 text-sm font-medium text-white"
         >
           View details
         </Link>
+        {(item.opportunity_url || item.source_url) && (
+          <a
+            href={item.opportunity_url || item.source_url}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700"
+          >
+            Open source
+          </a>
+        )}
       </div>
     </div>
   );
