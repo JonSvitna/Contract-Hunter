@@ -26,8 +26,36 @@ def load_keywords() -> list[str]:
     return payload.get("keywords", [])
 
 
+def save_keywords(keywords: list[str]) -> dict:
+    payload = {"keywords": keywords}
+    path = settings.config_dir / "keywords.yaml"
+    with path.open("w", encoding="utf-8") as f:
+        f.write("keywords:\n")
+        for keyword in keywords:
+            f.write(f"  - {keyword}\n")
+    return payload
+
+
 def load_business_profile() -> dict:
     return _read_yaml(settings.config_dir / "business_profile.yaml")
+
+
+def save_business_profile(profile: dict) -> dict:
+    path = settings.config_dir / "business_profile.yaml"
+    with path.open("w", encoding="utf-8") as f:
+        yaml.safe_dump(profile, f, sort_keys=False)
+    return profile
+
+
+def load_scoring_rules() -> dict:
+    return _read_yaml(settings.config_dir / "scoring_rules.yaml")
+
+
+def save_scoring_rules(rules: dict) -> dict:
+    path = settings.config_dir / "scoring_rules.yaml"
+    with path.open("w", encoding="utf-8") as f:
+        yaml.safe_dump(rules, f, sort_keys=False)
+    return rules
 
 
 def load_scheduler_config() -> dict:

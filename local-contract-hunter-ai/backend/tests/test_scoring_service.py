@@ -69,6 +69,58 @@ def test_strong_emma_cyber_security_opportunity_scores_as_pursue():
     assert result["local_fit"] == 85
 
 
+def test_score_opportunity_uses_configured_recommendation_bands(monkeypatch):
+    monkeypatch.setattr(
+        scoring_service,
+        "load_scoring_rules",
+        lambda: {
+            "weights": {
+                "skill_match": 0.25,
+                "solo_fit": 0.25,
+                "revenue_fit": 0.2,
+                "local_fit": 0.3,
+            },
+            "penalties": {"complexity_factor": 0.2},
+            "hard_penalties": [
+                "24/7",
+                "soc monitoring",
+                "managed services",
+                "staffing",
+                "multi-year",
+                "enterprise-wide",
+                "team of",
+                "federal",
+                "statewide",
+                "construction",
+                "renovation",
+                "property improvements",
+                "facility",
+                "fence",
+                "commodity",
+                "maintenance",
+                "supplies",
+                "hardware",
+                "installation",
+            ],
+            "positive_skills": ["cybersecurity", "assessment"],
+            "recommendation_bands": {"pursue_min": 95, "watch_min": 55},
+            "deadline_rules": {"expired": 100, "lt_3_days": 90, "lt_7_days": 65},
+        },
+    )
+
+    result = scoring_service.score_opportunity(
+        opportunity(
+            title="Cybersecurity Risk Assessment",
+            agency="Maryland Department of Information Technology",
+            description_snippet="NIST cybersecurity compliance assessment and security policy review.",
+        ),
+        {"name": "Sean"},
+    )
+
+    assert result["fit_score"] < 95
+    assert result["recommendation"] != "Pursue"
+
+
 def test_construction_security_false_positive_does_not_become_pursue():
     result = scoring_service.score_opportunity(
         opportunity(

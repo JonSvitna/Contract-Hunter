@@ -17,6 +17,7 @@ from app.models.import_run import ImportRun, ImportRunItem  # noqa: F401,E402
 from app.models.opportunity import Opportunity  # noqa: F401,E402
 from app.models.score import OpportunityScore  # noqa: F401,E402
 from app.models.source import Source  # noqa: F401,E402
+from app.models.source_run import SourceRun, SourceRunItem  # noqa: F401,E402
 
 
 @pytest.fixture()

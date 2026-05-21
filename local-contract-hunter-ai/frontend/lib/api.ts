@@ -6,11 +6,15 @@ import {
   OpportunitySearchResult,
   OpportunitySummary,
   ProposalChecklist,
+  BusinessProfile,
   EmmaExcelImportResult,
   SchedulerConfig,
   SchedulerStatus,
+  ScoringRules,
   SearchRunResult,
+  SettingsConfig,
   Source,
+  SourceDashboardResponse,
   ThrottleConfig,
   ThrottleControl,
 } from "@/lib/types";
@@ -100,7 +104,28 @@ export const api = {
   },
   getImportRuns: () => fetchJson<ImportRun[]>("/api/import/runs"),
   getSources: () => fetchJson<Source[]>("/api/sources"),
-  getConfigPreview: () => fetchJson<{ business_profile: unknown; keywords: string[] }>("/api/search/config"),
+  getSourceDashboard: () => fetchJson<SourceDashboardResponse>("/api/sources/dashboard"),
+  validateSource: (sourceName: string, autoScore = true) =>
+    fetchJson<SearchRunResult>("/api/search/validate/source", {
+      method: "POST",
+      body: JSON.stringify({ source_name: sourceName, auto_score: autoScore })
+    }),
+  getConfigPreview: () => fetchJson<SettingsConfig>("/api/search/config"),
+  updateKeywords: (keywords: string[]) =>
+    fetchJson<{ keywords: string[] }>("/api/search/config/keywords", {
+      method: "PATCH",
+      body: JSON.stringify({ keywords })
+    }),
+  updateBusinessProfile: (profile: BusinessProfile) =>
+    fetchJson<BusinessProfile>("/api/search/config/business-profile", {
+      method: "PATCH",
+      body: JSON.stringify(profile)
+    }),
+  updateScoringRules: (rules: ScoringRules) =>
+    fetchJson<ScoringRules>("/api/search/config/scoring-rules", {
+      method: "PATCH",
+      body: JSON.stringify(rules)
+    }),
   getThrottleConfig: () => fetchJson<ThrottleConfig>("/api/search/throttle"),
   updateThrottleDefaults: (payload: Partial<ThrottleControl>) =>
     fetchJson<ThrottleConfig>("/api/search/throttle/defaults", {

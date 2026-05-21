@@ -32,39 +32,49 @@ class FakePage:
 
 
 class FakeContext:
-    def __init__(self, page: FakePage):
+    def __init__(self, page: FakePage, close_error: Exception | None = None):
         self.page = page
+        self.close_error = close_error
         self.closed = False
 
     def new_page(self) -> FakePage:
         return self.page
 
     def close(self) -> None:
+        if self.close_error:
+            raise self.close_error
         self.closed = True
 
 
 class FakeBrowser:
-    def __init__(self, page: FakePage):
+    def __init__(self, page: FakePage, context_close_error: Exception | None = None):
         self.page = page
+        self.context_close_error = context_close_error
         self.closed = False
 
     def new_context(self) -> FakeContext:
-        return FakeContext(self.page)
+        return FakeContext(self.page, close_error=self.context_close_error)
 
     def close(self) -> None:
         self.closed = True
 
 
 class FakeChromium:
-    def __init__(self, page: FakePage | None = None, launch_error: Exception | None = None):
+    def __init__(
+        self,
+        page: FakePage | None = None,
+        launch_error: Exception | None = None,
+        context_close_error: Exception | None = None,
+    ):
         self.page = page or FakePage([])
         self.launch_error = launch_error
+        self.context_close_error = context_close_error
 
     def launch(self, headless: bool) -> FakeBrowser:
         assert headless is True
         if self.launch_error:
             raise self.launch_error
-        return FakeBrowser(self.page)
+        return FakeBrowser(self.page, context_close_error=self.context_close_error)
 
 
 class FakePlaywright:
@@ -78,8 +88,17 @@ class FakePlaywright:
         return False
 
 
-def install_fake_playwright(monkeypatch, page: FakePage | None = None, launch_error: Exception | None = None) -> None:
-    chromium = FakeChromium(page=page, launch_error=launch_error)
+def install_fake_playwright(
+    monkeypatch,
+    page: FakePage | None = None,
+    launch_error: Exception | None = None,
+    context_close_error: Exception | None = None,
+) -> None:
+    chromium = FakeChromium(
+        page=page,
+        launch_error=launch_error,
+        context_close_error=context_close_error,
+    )
     monkeypatch.setattr(generic_procurement_scraper, "sync_playwright", lambda: FakePlaywright(chromium))
 
 
@@ -141,3 +160,25 @@ def test_browser_failure_returns_manual_review_failure_candidate(monkeypatch):
     assert results[0]["manual_review_needed"] is True
     assert "Scrape failed gracefully" in results[0]["description_snippet"]
     assert "browser failed to launch" in results[0]["description_snippet"]
+
+
+def test_cleanup_failure_does_not_escape_manual_review_fallback(monkeypatch):
+    page = FakePage(
+        anchors=[{"href": "bids/road-salt", "text": "Road salt supply bid"}],
+        body_text="General purchasing notices and vendor registration",
+    )
+    install_fake_playwright(
+        monkeypatch,
+        page=page,
+        context_close_error=RuntimeError("Event loop is closed! Is Playwright already stopped?"),
+    )
+
+    results = GenericProcurementScraper(delay_seconds=0).scrape(
+        source_name="Allegany County Bid Postings",
+        source_url="https://example.test/bids/",
+        keywords=["cybersecurity"],
+    )
+
+    assert len(results) == 1
+    assert results[0]["title"] == "Manual review needed for Allegany County Bid Postings"
+    assert results[0]["manual_review_needed"] is True

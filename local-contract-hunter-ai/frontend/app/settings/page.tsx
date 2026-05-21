@@ -3,18 +3,80 @@
 import { useEffect, useState } from "react";
 
 import { api } from "@/lib/api";
-import { SchedulerConfig, SchedulerStatus, Source, ThrottleConfig } from "@/lib/types";
+import {
+  BusinessProfile,
+  SchedulerConfig,
+  SchedulerStatus,
+  ScoringRules,
+  Source,
+  ThrottleConfig
+} from "@/lib/types";
 
-type ConfigPreview = {
-  business_profile: unknown;
-  keywords: string[];
+type SaveSection = "keywords" | "profile" | "scoring" | "scheduler" | "throttle";
+
+const emptyBusinessProfile: BusinessProfile = {
+  name: "",
+  company: "",
+  location: "",
+  profile: "",
+  skills: [],
+  certifications: [],
+  education: [],
+  target_contract_size: {
+    preferred_min: 0,
+    preferred_max: 0,
+    acceptable_max: 0
+  },
+  preferred_work: [],
+  avoid: []
 };
 
+const defaultScoringRules: ScoringRules = {
+  weights: {
+    skill_match: 0.25,
+    solo_fit: 0.25,
+    revenue_fit: 0.2,
+    local_fit: 0.3
+  },
+  penalties: {
+    complexity_factor: 0.2
+  },
+  hard_penalties: [],
+  positive_skills: [],
+  recommendation_bands: {
+    pursue_min: 75,
+    watch_min: 55
+  },
+  deadline_rules: {
+    expired: 100,
+    lt_3_days: 90,
+    lt_7_days: 65
+  }
+};
+
+function toLines(values: string[]): string {
+  return values.join("\n");
+}
+
+function fromLines(value: string): string[] {
+  return value
+    .split("\n")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function errorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
+}
+
 export default function SettingsPage() {
-  const [config, setConfig] = useState<ConfigPreview>({ business_profile: {}, keywords: [] });
+  const [keywords, setKeywords] = useState<string[]>([]);
+  const [keywordDraft, setKeywordDraft] = useState("");
+  const [businessProfile, setBusinessProfile] = useState<BusinessProfile>(emptyBusinessProfile);
+  const [scoringRules, setScoringRules] = useState<ScoringRules>(defaultScoringRules);
   const [scheduler, setScheduler] = useState<SchedulerConfig | null>(null);
   const [schedulerStatus, setSchedulerStatus] = useState<SchedulerStatus | null>(null);
-  const [saving, setSaving] = useState(false);
+  const [savingSection, setSavingSection] = useState<SaveSection | null>(null);
   const [runningNow, setRunningNow] = useState(false);
   const [customFrequency, setCustomFrequency] = useState(1440);
   const [maxRuns, setMaxRuns] = useState(2);
@@ -24,9 +86,33 @@ export default function SettingsPage() {
   const [defaultMaxLinks, setDefaultMaxLinks] = useState(120);
   const [defaultPageTimeout, setDefaultPageTimeout] = useState(20000);
   const [defaultBodyTimeout, setDefaultBodyTimeout] = useState(5000);
+  const [sectionMessages, setSectionMessages] = useState<Record<string, string>>({});
+  const [sectionErrors, setSectionErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    api.getConfigPreview().then(setConfig).catch(() => setConfig({ business_profile: {}, keywords: [] }));
+    api.getConfigPreview().then((data) => {
+      const profile = { ...emptyBusinessProfile, ...data.business_profile };
+      const rules = {
+        ...defaultScoringRules,
+        ...data.scoring_rules,
+        weights: { ...defaultScoringRules.weights, ...data.scoring_rules?.weights },
+        penalties: { ...defaultScoringRules.penalties, ...data.scoring_rules?.penalties },
+        recommendation_bands: {
+          ...defaultScoringRules.recommendation_bands,
+          ...data.scoring_rules?.recommendation_bands
+        },
+        deadline_rules: { ...defaultScoringRules.deadline_rules, ...data.scoring_rules?.deadline_rules }
+      };
+      setKeywords(data.keywords || []);
+      setKeywordDraft(toLines(data.keywords || []));
+      setBusinessProfile(profile);
+      setScoringRules(rules);
+    }).catch(() => {
+      setKeywords([]);
+      setKeywordDraft("");
+      setBusinessProfile(emptyBusinessProfile);
+      setScoringRules(defaultScoringRules);
+    });
     api.getSchedulerConfig().then((data) => {
       setScheduler(data);
       setCustomFrequency(data.frequency_minutes);
@@ -42,21 +128,72 @@ export default function SettingsPage() {
     }).catch(() => setThrottleConfig(null));
   }, []);
 
+  function clearSectionFeedback(section: SaveSection) {
+    setSectionMessages((current) => ({ ...current, [section]: "" }));
+    setSectionErrors((current) => ({ ...current, [section]: "" }));
+  }
+
+  async function saveKeywords() {
+    const section: SaveSection = "keywords";
+    setSavingSection(section);
+    clearSectionFeedback(section);
+    try {
+      const updated = await api.updateKeywords(fromLines(keywordDraft));
+      setKeywords(updated.keywords);
+      setKeywordDraft(toLines(updated.keywords));
+      setSectionMessages((current) => ({ ...current, [section]: "Keywords saved." }));
+    } catch (error) {
+      setSectionErrors((current) => ({ ...current, [section]: errorMessage(error, "Keywords could not be saved.") }));
+    } finally {
+      setSavingSection(null);
+    }
+  }
+
+  async function saveBusinessProfile() {
+    const section: SaveSection = "profile";
+    setSavingSection(section);
+    clearSectionFeedback(section);
+    try {
+      const updated = await api.updateBusinessProfile(businessProfile);
+      setBusinessProfile(updated);
+      setSectionMessages((current) => ({ ...current, [section]: "Business profile saved." }));
+    } catch (error) {
+      setSectionErrors((current) => ({ ...current, [section]: errorMessage(error, "Business profile could not be saved.") }));
+    } finally {
+      setSavingSection(null);
+    }
+  }
+
+  async function saveScoringRules() {
+    const section: SaveSection = "scoring";
+    setSavingSection(section);
+    clearSectionFeedback(section);
+    try {
+      const updated = await api.updateScoringRules(scoringRules);
+      setScoringRules(updated);
+      setSectionMessages((current) => ({ ...current, [section]: "Scoring rules saved." }));
+    } catch (error) {
+      setSectionErrors((current) => ({ ...current, [section]: errorMessage(error, "Scoring rules could not be saved.") }));
+    } finally {
+      setSavingSection(null);
+    }
+  }
+
   async function toggleScheduler() {
-    setSaving(true);
+    setSavingSection("scheduler");
     try {
       const updated = await api.toggleScheduler();
       setScheduler(updated);
       const status = await api.getSchedulerStatus();
       setSchedulerStatus(status);
     } finally {
-      setSaving(false);
+      setSavingSection(null);
     }
   }
 
   async function updateFrequency(frequency: number) {
     if (!scheduler) return;
-    setSaving(true);
+    setSavingSection("scheduler");
     try {
       const updated = await api.updateSchedulerConfig({ frequency_minutes: frequency });
       setScheduler(updated);
@@ -64,7 +201,7 @@ export default function SettingsPage() {
       const status = await api.getSchedulerStatus();
       setSchedulerStatus(status);
     } finally {
-      setSaving(false);
+      setSavingSection(null);
     }
   }
 
@@ -73,7 +210,7 @@ export default function SettingsPage() {
     const normalizedFrequency = Math.max(15, Math.min(10080, customFrequency));
     const normalizedMaxRuns = Math.max(1, Math.min(48, maxRuns));
 
-    setSaving(true);
+    setSavingSection("scheduler");
     try {
       const updated = await api.updateSchedulerConfig({
         frequency_minutes: normalizedFrequency,
@@ -85,7 +222,7 @@ export default function SettingsPage() {
       const status = await api.getSchedulerStatus();
       setSchedulerStatus(status);
     } finally {
-      setSaving(false);
+      setSavingSection(null);
     }
   }
 
@@ -111,7 +248,7 @@ export default function SettingsPage() {
   }
 
   async function saveThrottleDefaults() {
-    setSaving(true);
+    setSavingSection("throttle");
     try {
       const updated = await api.updateThrottleDefaults({
         max_candidate_links: Math.max(20, Math.min(500, defaultMaxLinks)),
@@ -120,7 +257,7 @@ export default function SettingsPage() {
       });
       setThrottleConfig(updated);
     } finally {
-      setSaving(false);
+      setSavingSection(null);
     }
   }
 
@@ -129,18 +266,18 @@ export default function SettingsPage() {
     if (!current) return;
     const delta = direction === "up" ? 20 : -20;
     const next = Math.max(20, Math.min(500, current.max_candidate_links + delta));
-    setSaving(true);
+    setSavingSection("throttle");
     try {
       const updated = await api.updateThrottleForSource(sourceId, { max_candidate_links: next });
       setThrottleConfig(updated);
     } finally {
-      setSaving(false);
+      setSavingSection(null);
     }
   }
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-semibold text-ink">Settings Preview</h2>
+      <h2 className="text-xl font-semibold text-ink">Settings Workbench</h2>
 
       <div className="card">
         <h3 className="mb-2 text-base font-semibold text-ink">Automation schedule</h3>
@@ -168,28 +305,28 @@ export default function SettingsPage() {
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={toggleScheduler}
-                disabled={saving}
+                disabled={savingSection !== null}
                 className="rounded-md bg-navy px-3 py-2 text-sm text-white disabled:opacity-60"
               >
                 {scheduler.enabled ? "Turn Off" : "Turn On"}
               </button>
               <button
                 onClick={() => updateFrequency(60)}
-                disabled={saving}
+                disabled={savingSection !== null}
                 className="rounded-md border border-slate-300 px-3 py-2 text-sm"
               >
                 Hourly
               </button>
               <button
                 onClick={() => updateFrequency(720)}
-                disabled={saving}
+                disabled={savingSection !== null}
                 className="rounded-md border border-slate-300 px-3 py-2 text-sm"
               >
                 12 hours
               </button>
               <button
                 onClick={() => updateFrequency(1440)}
-                disabled={saving}
+                disabled={savingSection !== null}
                 className="rounded-md border border-slate-300 px-3 py-2 text-sm"
               >
                 Daily
@@ -222,7 +359,7 @@ export default function SettingsPage() {
             <div>
               <button
                 onClick={saveCustomSchedule}
-                disabled={saving}
+                disabled={savingSection !== null}
                 className="rounded-md border border-slate-300 px-3 py-2 text-sm disabled:opacity-60"
               >
                 Save custom schedule
@@ -231,7 +368,7 @@ export default function SettingsPage() {
             <div>
               <button
                 onClick={runNowWithGuards}
-                disabled={runningNow || saving}
+                disabled={runningNow || savingSection !== null}
                 className="rounded-md bg-sage px-3 py-2 text-sm text-white disabled:opacity-60"
               >
                 {runningNow ? "Running..." : "Run Search Now"}
@@ -250,22 +387,319 @@ export default function SettingsPage() {
         )}
       </div>
 
-      <div className="card">
-        <h3 className="mb-2 text-base font-semibold text-ink">Business profile</h3>
-        <pre className="overflow-auto rounded-md bg-slate-50 p-3 text-xs text-slate-700">
-          {JSON.stringify(config.business_profile, null, 2)}
-        </pre>
-      </div>
-
-      <div className="card">
-        <h3 className="mb-2 text-base font-semibold text-ink">Keywords</h3>
+      <div className="card space-y-3">
+        <h3 className="text-base font-semibold text-ink">Keywords</h3>
+        <p className="text-xs text-slate-600">One keyword or phrase per line. Duplicates are removed on save.</p>
+        <textarea
+          value={keywordDraft}
+          onChange={(e) => setKeywordDraft(e.target.value)}
+          rows={8}
+          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+        />
         <div className="flex flex-wrap gap-2">
-          {config.keywords.map((keyword) => (
+          {keywords.map((keyword) => (
             <span key={keyword} className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-700">
               {keyword}
             </span>
           ))}
         </div>
+        {sectionMessages.keywords && <div className="text-xs text-emerald-700">{sectionMessages.keywords}</div>}
+        {sectionErrors.keywords && <div className="text-xs text-red-700">{sectionErrors.keywords}</div>}
+        <button
+          onClick={saveKeywords}
+          disabled={savingSection !== null}
+          className="rounded-md bg-navy px-3 py-2 text-sm text-white disabled:opacity-60"
+        >
+          {savingSection === "keywords" ? "Saving..." : "Save keywords"}
+        </button>
+      </div>
+
+      <div className="card space-y-3">
+        <h3 className="text-base font-semibold text-ink">Business profile</h3>
+        <div className="grid gap-2 sm:grid-cols-3">
+          <label className="text-xs text-slate-600">
+            Name
+            <input
+              value={businessProfile.name}
+              onChange={(e) => setBusinessProfile((current) => ({ ...current, name: e.target.value }))}
+              className="mt-1 w-full rounded-md border border-slate-300 px-2 py-2 text-sm"
+            />
+          </label>
+          <label className="text-xs text-slate-600">
+            Company
+            <input
+              value={businessProfile.company}
+              onChange={(e) => setBusinessProfile((current) => ({ ...current, company: e.target.value }))}
+              className="mt-1 w-full rounded-md border border-slate-300 px-2 py-2 text-sm"
+            />
+          </label>
+          <label className="text-xs text-slate-600">
+            Location
+            <input
+              value={businessProfile.location}
+              onChange={(e) => setBusinessProfile((current) => ({ ...current, location: e.target.value }))}
+              className="mt-1 w-full rounded-md border border-slate-300 px-2 py-2 text-sm"
+            />
+          </label>
+        </div>
+        <label className="text-xs text-slate-600">
+          Profile
+          <textarea
+            value={businessProfile.profile}
+            onChange={(e) => setBusinessProfile((current) => ({ ...current, profile: e.target.value }))}
+            rows={3}
+            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+          />
+        </label>
+        <div className="grid gap-2 sm:grid-cols-3">
+          <label className="text-xs text-slate-600">
+            Preferred min
+            <input
+              type="number"
+              min={0}
+              value={businessProfile.target_contract_size.preferred_min}
+              onChange={(e) =>
+                setBusinessProfile((current) => ({
+                  ...current,
+                  target_contract_size: {
+                    ...current.target_contract_size,
+                    preferred_min: Number(e.target.value || 0)
+                  }
+                }))
+              }
+              className="mt-1 w-full rounded-md border border-slate-300 px-2 py-2 text-sm"
+            />
+          </label>
+          <label className="text-xs text-slate-600">
+            Preferred max
+            <input
+              type="number"
+              min={0}
+              value={businessProfile.target_contract_size.preferred_max}
+              onChange={(e) =>
+                setBusinessProfile((current) => ({
+                  ...current,
+                  target_contract_size: {
+                    ...current.target_contract_size,
+                    preferred_max: Number(e.target.value || 0)
+                  }
+                }))
+              }
+              className="mt-1 w-full rounded-md border border-slate-300 px-2 py-2 text-sm"
+            />
+          </label>
+          <label className="text-xs text-slate-600">
+            Acceptable max
+            <input
+              type="number"
+              min={0}
+              value={businessProfile.target_contract_size.acceptable_max}
+              onChange={(e) =>
+                setBusinessProfile((current) => ({
+                  ...current,
+                  target_contract_size: {
+                    ...current.target_contract_size,
+                    acceptable_max: Number(e.target.value || 0)
+                  }
+                }))
+              }
+              className="mt-1 w-full rounded-md border border-slate-300 px-2 py-2 text-sm"
+            />
+          </label>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <label className="text-xs text-slate-600">
+            Skills
+            <textarea
+              value={toLines(businessProfile.skills)}
+              onChange={(e) => setBusinessProfile((current) => ({ ...current, skills: fromLines(e.target.value) }))}
+              rows={6}
+              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="text-xs text-slate-600">
+            Preferred work
+            <textarea
+              value={toLines(businessProfile.preferred_work)}
+              onChange={(e) => setBusinessProfile((current) => ({ ...current, preferred_work: fromLines(e.target.value) }))}
+              rows={6}
+              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="text-xs text-slate-600">
+            Certifications
+            <textarea
+              value={toLines(businessProfile.certifications)}
+              onChange={(e) => setBusinessProfile((current) => ({ ...current, certifications: fromLines(e.target.value) }))}
+              rows={4}
+              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="text-xs text-slate-600">
+            Avoid
+            <textarea
+              value={toLines(businessProfile.avoid)}
+              onChange={(e) => setBusinessProfile((current) => ({ ...current, avoid: fromLines(e.target.value) }))}
+              rows={4}
+              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="text-xs text-slate-600 sm:col-span-2">
+            Education
+            <textarea
+              value={toLines(businessProfile.education)}
+              onChange={(e) => setBusinessProfile((current) => ({ ...current, education: fromLines(e.target.value) }))}
+              rows={3}
+              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            />
+          </label>
+        </div>
+        {sectionMessages.profile && <div className="text-xs text-emerald-700">{sectionMessages.profile}</div>}
+        {sectionErrors.profile && <div className="text-xs text-red-700">{sectionErrors.profile}</div>}
+        <button
+          onClick={saveBusinessProfile}
+          disabled={savingSection !== null}
+          className="rounded-md bg-navy px-3 py-2 text-sm text-white disabled:opacity-60"
+        >
+          {savingSection === "profile" ? "Saving..." : "Save business profile"}
+        </button>
+      </div>
+
+      <div className="card space-y-3">
+        <h3 className="text-base font-semibold text-ink">Scoring rules</h3>
+        <div className="grid gap-2 sm:grid-cols-4">
+          {(["skill_match", "solo_fit", "revenue_fit", "local_fit"] as const).map((key) => (
+            <label key={key} className="text-xs text-slate-600">
+              {key.replace("_", " ")} weight
+              <input
+                type="number"
+                min={0}
+                max={1}
+                step={0.05}
+                value={scoringRules.weights[key]}
+                onChange={(e) =>
+                  setScoringRules((current) => ({
+                    ...current,
+                    weights: { ...current.weights, [key]: Number(e.target.value || 0) }
+                  }))
+                }
+                className="mt-1 w-full rounded-md border border-slate-300 px-2 py-2 text-sm"
+              />
+            </label>
+          ))}
+        </div>
+        <div className="grid gap-2 sm:grid-cols-5">
+          <label className="text-xs text-slate-600">
+            Complexity penalty
+            <input
+              type="number"
+              min={0}
+              max={1}
+              step={0.05}
+              value={scoringRules.penalties.complexity_factor}
+              onChange={(e) =>
+                setScoringRules((current) => ({
+                  ...current,
+                  penalties: { ...current.penalties, complexity_factor: Number(e.target.value || 0) }
+                }))
+              }
+              className="mt-1 w-full rounded-md border border-slate-300 px-2 py-2 text-sm"
+            />
+          </label>
+          <label className="text-xs text-slate-600">
+            Pursue min
+            <input
+              type="number"
+              min={0}
+              max={100}
+              value={scoringRules.recommendation_bands.pursue_min}
+              onChange={(e) =>
+                setScoringRules((current) => ({
+                  ...current,
+                  recommendation_bands: { ...current.recommendation_bands, pursue_min: Number(e.target.value || 0) }
+                }))
+              }
+              className="mt-1 w-full rounded-md border border-slate-300 px-2 py-2 text-sm"
+            />
+          </label>
+          <label className="text-xs text-slate-600">
+            Watch min
+            <input
+              type="number"
+              min={0}
+              max={100}
+              value={scoringRules.recommendation_bands.watch_min}
+              onChange={(e) =>
+                setScoringRules((current) => ({
+                  ...current,
+                  recommendation_bands: { ...current.recommendation_bands, watch_min: Number(e.target.value || 0) }
+                }))
+              }
+              className="mt-1 w-full rounded-md border border-slate-300 px-2 py-2 text-sm"
+            />
+          </label>
+          <label className="text-xs text-slate-600">
+            &lt; 3 days risk
+            <input
+              type="number"
+              min={0}
+              max={100}
+              value={scoringRules.deadline_rules.lt_3_days}
+              onChange={(e) =>
+                setScoringRules((current) => ({
+                  ...current,
+                  deadline_rules: { ...current.deadline_rules, lt_3_days: Number(e.target.value || 0) }
+                }))
+              }
+              className="mt-1 w-full rounded-md border border-slate-300 px-2 py-2 text-sm"
+            />
+          </label>
+          <label className="text-xs text-slate-600">
+            &lt; 7 days risk
+            <input
+              type="number"
+              min={0}
+              max={100}
+              value={scoringRules.deadline_rules.lt_7_days}
+              onChange={(e) =>
+                setScoringRules((current) => ({
+                  ...current,
+                  deadline_rules: { ...current.deadline_rules, lt_7_days: Number(e.target.value || 0) }
+                }))
+              }
+              className="mt-1 w-full rounded-md border border-slate-300 px-2 py-2 text-sm"
+            />
+          </label>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <label className="text-xs text-slate-600">
+            Positive skills
+            <textarea
+              value={toLines(scoringRules.positive_skills)}
+              onChange={(e) => setScoringRules((current) => ({ ...current, positive_skills: fromLines(e.target.value) }))}
+              rows={7}
+              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="text-xs text-slate-600">
+            Hard penalties
+            <textarea
+              value={toLines(scoringRules.hard_penalties)}
+              onChange={(e) => setScoringRules((current) => ({ ...current, hard_penalties: fromLines(e.target.value) }))}
+              rows={7}
+              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            />
+          </label>
+        </div>
+        {sectionMessages.scoring && <div className="text-xs text-emerald-700">{sectionMessages.scoring}</div>}
+        {sectionErrors.scoring && <div className="text-xs text-red-700">{sectionErrors.scoring}</div>}
+        <button
+          onClick={saveScoringRules}
+          disabled={savingSection !== null}
+          className="rounded-md bg-navy px-3 py-2 text-sm text-white disabled:opacity-60"
+        >
+          {savingSection === "scoring" ? "Saving..." : "Save scoring rules"}
+        </button>
       </div>
 
       <div className="card space-y-3">
@@ -311,7 +745,7 @@ export default function SettingsPage() {
             <div>
               <button
                 onClick={saveThrottleDefaults}
-                disabled={saving}
+                disabled={savingSection !== null}
                 className="rounded-md border border-slate-300 px-3 py-2 text-sm disabled:opacity-60"
               >
                 Save default throttle
@@ -330,14 +764,14 @@ export default function SettingsPage() {
                     <div className="mt-2 flex gap-2">
                       <button
                         onClick={() => tuneSource(source.id, source.name, "down")}
-                        disabled={saving}
+                        disabled={savingSection !== null}
                         className="rounded-md border border-slate-300 px-2 py-1 text-xs"
                       >
                         Fewer links
                       </button>
                       <button
                         onClick={() => tuneSource(source.id, source.name, "up")}
-                        disabled={saving}
+                        disabled={savingSection !== null}
                         className="rounded-md border border-slate-300 px-2 py-1 text-xs"
                       >
                         More links

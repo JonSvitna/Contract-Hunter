@@ -6,14 +6,42 @@ weights:
 penalties:
   complexity_factor: 0.20
 hard_penalties:
-  - 24/7 support
+  - 24/7
   - SOC monitoring
-  - large staffing requirements
-  - federal mega contract
-  - statewide mega contract
-  - construction or renovation work
-  - commodity supplies
-  - hardware maintenance
+  - managed services
+  - staffing
+  - multi-year
+  - enterprise-wide
+  - team of
+  - federal
+  - statewide
+  - construction
+  - renovation
+  - property improvements
+  - facility
+  - fence
+  - commodity
+  - maintenance
+  - supplies
+  - hardware
+  - installation
+positive_skills:
+  - cyber
+  - cybersecurity
+  - security
+  - security software
+  - cloud-based protection
+  - attack surface
+  - vulnerability
+  - nist
+  - cmmc
+  - policy
+  - awareness
+  - risk
+  - grc
+  - compliance
+  - assessment
+  - information technology
 recommendation_bands:
   pursue_min: 75
   watch_min: 55

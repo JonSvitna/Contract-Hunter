@@ -59,6 +59,7 @@ def test_validate_source_route_runs_active_generic_source_without_mock_fallback(
     assert captured_options[0].source_type == "generic"
     assert captured_options[0].allow_mock_fallback is False
     assert captured_options[0].auto_score is True
+    assert captured_options[0].run_kind == "validation"
 
 
 def test_validate_source_route_rejects_non_generic_source(db_session, monkeypatch):

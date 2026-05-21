@@ -9,13 +9,18 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import get_db
 from app.models.source import Source
+from app.schemas.settings import BusinessProfileUpdate, KeywordsUpdate, ScoringRulesUpdate
 from app.schemas.throttle import ThrottleConfig, ThrottleControl, ThrottleControlUpdate
 from app.services.search_service import SearchRunOptions, execute_search
 from app.services.source_service import (
     load_business_profile,
     load_keywords,
+    load_scoring_rules,
     load_scheduler_config,
     load_throttle_config,
+    save_business_profile,
+    save_keywords,
+    save_scoring_rules,
     save_scheduler_config,
     save_throttle_config,
 )
@@ -38,7 +43,12 @@ def run_search(db: Session = Depends(get_db)):
 def validate_emma_search(db: Session = Depends(get_db)):
     return execute_search(
         db,
-        SearchRunOptions(source_type="emma", allow_mock_fallback=False, auto_score=True),
+        SearchRunOptions(
+            source_type="emma",
+            allow_mock_fallback=False,
+            auto_score=True,
+            run_kind="validation",
+        ),
     )
 
 
@@ -58,12 +68,12 @@ def validate_source_search(payload: SourceValidationRequest, db: Session = Depen
             source_name=source.name,
             allow_mock_fallback=False,
             auto_score=payload.auto_score,
+            run_kind="validation",
         ),
     )
 
 
-@router.post("/run-now")
-def run_search_now(db: Session = Depends(get_db)):
+def _run_search_now_with_kind(db: Session, run_kind: str):
     scheduler = load_scheduler_config()
     today = datetime.now(timezone.utc).date().isoformat()
 
@@ -109,7 +119,7 @@ def run_search_now(db: Session = Depends(get_db)):
         except ValueError:
             pass
 
-    result = execute_search(db, SearchRunOptions())
+    result = execute_search(db, SearchRunOptions(run_kind=run_kind))
     scheduler["last_run_at"] = datetime.now(timezone.utc).isoformat()
     scheduler["last_run_day"] = today
     scheduler["runs_today"] = int(scheduler.get("runs_today", 0)) + 1
@@ -124,6 +134,11 @@ def run_search_now(db: Session = Depends(get_db)):
     }
 
 
+@router.post("/run-now")
+def run_search_now(db: Session = Depends(get_db)):
+    return _run_search_now_with_kind(db, "scheduled")
+
+
 @router.post("/cron-run")
 def run_search_from_cron(
     db: Session = Depends(get_db),
@@ -133,7 +148,7 @@ def run_search_from_cron(
         raise HTTPException(status_code=400, detail="CRON_WEBHOOK_TOKEN is not configured")
     if x_cron_token != settings.cron_webhook_token:
         raise HTTPException(status_code=401, detail="Invalid cron token")
-    return run_search_now(db)
+    return _run_search_now_with_kind(db, "cron")
 
 
 @router.get("/throttle", response_model=ThrottleConfig)
@@ -180,5 +195,21 @@ def get_search_config_preview():
     return {
         "business_profile": load_business_profile(),
         "keywords": load_keywords(),
+        "scoring_rules": load_scoring_rules(),
         "throttle": load_throttle_config(),
     }
+
+
+@router.patch("/config/keywords")
+def patch_keywords(payload: KeywordsUpdate):
+    return save_keywords(payload.keywords)
+
+
+@router.patch("/config/business-profile")
+def patch_business_profile(payload: BusinessProfileUpdate):
+    return save_business_profile(payload.model_dump())
+
+
+@router.patch("/config/scoring-rules")
+def patch_scoring_rules(payload: ScoringRulesUpdate):
+    return save_scoring_rules(payload.model_dump())

@@ -116,6 +116,31 @@ export type Source = {
   notes?: string | null;
 };
 
+export type SourceRunSummary = {
+  id: number;
+  run_kind: string;
+  status: "running" | "completed" | "failed" | string;
+  started_at: string;
+  finished_at?: string | null;
+  duration_ms?: number | null;
+  candidates_found: number;
+  created: number;
+  duplicates_skipped: number;
+  scored: number;
+  manual_review_candidates: number;
+  manual_review_created: number;
+  manual_review_fallback_rate: number;
+  error_message?: string | null;
+};
+
+export type SourceDashboardItem = Source & {
+  last_run?: SourceRunSummary | null;
+};
+
+export type SourceDashboardResponse = {
+  items: SourceDashboardItem[];
+};
+
 export type SchedulerConfig = {
   enabled: boolean;
   frequency_minutes: number;
@@ -146,9 +171,21 @@ export type SearchRunResult = {
   ok: boolean;
   skipped?: boolean;
   reason?: string;
+  source_run_id?: number;
   created?: number;
   duplicates_skipped?: number;
   sources?: number;
+  scored?: number;
+  mock_fallback_used?: boolean;
+  diagnostics?: Array<{
+    source: string;
+    source_type: string;
+    candidates: number;
+    manual_review_candidates?: number;
+    source_run_id?: number | null;
+    status?: string;
+    error_message?: string;
+  }>;
   runs_today?: number;
   next_run_at?: string;
 };
@@ -195,4 +232,53 @@ export type ThrottleControl = {
 export type ThrottleConfig = {
   defaults: ThrottleControl;
   by_source: Record<string, ThrottleControl>;
+};
+
+export type TargetContractSize = {
+  preferred_min: number;
+  preferred_max: number;
+  acceptable_max: number;
+};
+
+export type BusinessProfile = {
+  name: string;
+  company: string;
+  location: string;
+  profile: string;
+  skills: string[];
+  certifications: string[];
+  education: string[];
+  target_contract_size: TargetContractSize;
+  preferred_work: string[];
+  avoid: string[];
+};
+
+export type ScoringRules = {
+  weights: {
+    skill_match: number;
+    solo_fit: number;
+    revenue_fit: number;
+    local_fit: number;
+  };
+  penalties: {
+    complexity_factor: number;
+  };
+  hard_penalties: string[];
+  positive_skills: string[];
+  recommendation_bands: {
+    pursue_min: number;
+    watch_min: number;
+  };
+  deadline_rules: {
+    expired: number;
+    lt_3_days: number;
+    lt_7_days: number;
+  };
+};
+
+export type SettingsConfig = {
+  business_profile: BusinessProfile;
+  keywords: string[];
+  scoring_rules: ScoringRules;
+  throttle: ThrottleConfig;
 };

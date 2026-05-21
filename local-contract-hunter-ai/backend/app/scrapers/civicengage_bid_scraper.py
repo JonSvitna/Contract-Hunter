@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 from contextlib import suppress
-from urllib.parse import urljoin
+from urllib.parse import urldefrag, urljoin, urlparse
 
 from app.scrapers.base_scraper import BaseScraper
 from app.services.extraction_service import (
@@ -17,7 +17,10 @@ except Exception:  # pragma: no cover
     sync_playwright = None
 
 
-class GenericProcurementScraper(BaseScraper):
+BID_TERMS = ("bid", "rfp", "proposal", "solicitation", "quote")
+
+
+class CivicEngageBidScraper(BaseScraper):
     def __init__(
         self,
         delay_seconds: float = 2.0,
@@ -32,21 +35,10 @@ class GenericProcurementScraper(BaseScraper):
 
     def scrape(self, source_name: str, source_url: str, keywords: list[str]) -> list[dict]:
         if sync_playwright is None:
-            return [
-                {
-                    "title": f"Manual review needed for {source_name}",
-                    "agency": source_name,
-                    "source_name": source_name,
-                    "source_url": source_url,
-                    "opportunity_url": source_url,
-                    "due_date": None,
-                    "description_snippet": "Playwright not installed locally. Source retained for manual review.",
-                    "extraction_confidence": 0.2,
-                    "manual_review_needed": True,
-                }
-            ]
+            return [self._failure_candidate(source_name, source_url, "Playwright not installed locally.")]
 
         results: list[dict] = []
+        seen_urls: set[str] = set()
         browser = None
         context = None
         try:
@@ -57,7 +49,6 @@ class GenericProcurementScraper(BaseScraper):
                 page.goto(source_url, wait_until="domcontentloaded", timeout=self.page_timeout_ms)
                 time.sleep(self.delay_seconds)
                 body_text = page.locator("body").inner_text(timeout=self.body_timeout_ms)
-
                 anchors = page.eval_on_selector_all(
                     "a",
                     "(elements, limit) => elements.slice(0, limit).map(e => ({href: e.href || '', text: (e.innerText || '').trim()}))",
@@ -69,12 +60,15 @@ class GenericProcurementScraper(BaseScraper):
                     href = anchor.get("href") or ""
                     if not text or not href:
                         continue
-                    if not any(k.lower() in text.lower() for k in keywords):
-                        continue
-
                     joined = urljoin(source_url, href)
-                    due_date = parse_possible_due_date(text)
-                    snippet = snippet_with_keywords(text, keywords)
+                    if joined in seen_urls or not self._looks_like_bid_link(text, joined, source_url):
+                        continue
+                    seen_urls.add(joined)
+                    combined_text = f"{text} {body_text}"
+                    keyword_match = any(keyword.lower() in text.lower() for keyword in keywords)
+                    due_date = parse_possible_due_date(text) or parse_possible_due_date(body_text)
+                    confidence = confidence_from_text(text, keywords)
+                    confidence = max(confidence, 0.75 if keyword_match else 0.45)
                     results.append(
                         {
                             "title": text[:500],
@@ -83,14 +77,13 @@ class GenericProcurementScraper(BaseScraper):
                             "source_url": source_url,
                             "opportunity_url": joined,
                             "due_date": due_date,
-                            "description_snippet": snippet,
-                            "extraction_confidence": confidence_from_text(text, keywords),
-                            "manual_review_needed": False,
+                            "description_snippet": snippet_with_keywords(combined_text, keywords),
+                            "extraction_confidence": min(confidence, 1.0),
+                            "manual_review_needed": not keyword_match,
                         }
                     )
 
                 if not results:
-                    # If keyword links were not obvious, retain a manual review item.
                     results.append(
                         {
                             "title": f"Manual review needed for {source_name}",
@@ -100,24 +93,12 @@ class GenericProcurementScraper(BaseScraper):
                             "opportunity_url": source_url,
                             "due_date": parse_possible_due_date(body_text),
                             "description_snippet": snippet_with_keywords(body_text, keywords),
-                            "extraction_confidence": confidence_from_text(body_text, keywords),
+                            "extraction_confidence": 0.2,
                             "manual_review_needed": True,
                         }
                     )
         except Exception as exc:
-            results = [
-                {
-                    "title": f"Manual review needed for {source_name}",
-                    "agency": source_name,
-                    "source_name": source_name,
-                    "source_url": source_url,
-                    "opportunity_url": source_url,
-                    "due_date": None,
-                    "description_snippet": f"Scrape failed gracefully: {str(exc)[:200]}",
-                    "extraction_confidence": 0.2,
-                    "manual_review_needed": True,
-                }
-            ]
+            results = [self._failure_candidate(source_name, source_url, f"Scrape failed gracefully: {str(exc)[:200]}")]
         finally:
             if context is not None:
                 with suppress(Exception):
@@ -126,3 +107,27 @@ class GenericProcurementScraper(BaseScraper):
                 with suppress(Exception):
                     browser.close()
         return results
+
+    @staticmethod
+    def _looks_like_bid_link(text: str, url: str, source_url: str) -> bool:
+        parsed = urlparse(urldefrag(url).url)
+        if "bidid=" in parsed.query.lower():
+            return True
+        source_path = urlparse(source_url).path.lower()
+        if parsed.path.lower() == source_path and "bids.aspx" in source_path:
+            return False
+        return any(term in text.lower() for term in BID_TERMS)
+
+    @staticmethod
+    def _failure_candidate(source_name: str, source_url: str, message: str) -> dict:
+        return {
+            "title": f"Manual review needed for {source_name}",
+            "agency": source_name,
+            "source_name": source_name,
+            "source_url": source_url,
+            "opportunity_url": source_url,
+            "due_date": None,
+            "description_snippet": message,
+            "extraction_confidence": 0.2,
+            "manual_review_needed": True,
+        }
