@@ -21,6 +21,10 @@ export default function OpportunityDetailPage() {
   const [item, setItem] = useState<Opportunity | null>(null);
   const [checklist, setChecklist] = useState<ProposalChecklist | null>(null);
   const [loading, setLoading] = useState(true);
+  const [statusUpdating, setStatusUpdating] = useState<string | null>(null);
+  const [scoring, setScoring] = useState(false);
+  const [copiedExternalId, setCopiedExternalId] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([api.getOpportunity(params.id), api.getProposalChecklist(params.id)])
@@ -33,19 +37,47 @@ export default function OpportunityDetailPage() {
 
   async function updateStatus(status: string) {
     if (!item) return;
-    const updated = await api.setStatus(item.id, status);
-    setItem(updated);
+    setStatusUpdating(status);
+    setActionError(null);
+    try {
+      const updated = await api.setStatus(item.id, status);
+      setItem(updated);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Status update failed.");
+    } finally {
+      setStatusUpdating(null);
+    }
   }
 
   async function runScore() {
     if (!item) return;
-    await api.scoreOpportunity(item.id);
-    const [refreshed, refreshedChecklist] = await Promise.all([
-      api.getOpportunity(item.id),
-      api.getProposalChecklist(item.id),
-    ]);
-    setItem(refreshed);
-    setChecklist(refreshedChecklist);
+    setScoring(true);
+    setActionError(null);
+    try {
+      await api.scoreOpportunity(item.id);
+      const [refreshed, refreshedChecklist] = await Promise.all([
+        api.getOpportunity(item.id),
+        api.getProposalChecklist(item.id),
+      ]);
+      setItem(refreshed);
+      setChecklist(refreshedChecklist);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Re-score failed.");
+    } finally {
+      setScoring(false);
+    }
+  }
+
+  async function copyExternalId() {
+    if (!item?.external_id) return;
+    setActionError(null);
+    try {
+      await navigator.clipboard.writeText(item.external_id);
+      setCopiedExternalId(true);
+      window.setTimeout(() => setCopiedExternalId(false), 1500);
+    } catch {
+      setActionError("Could not copy the BPM ID from this browser.");
+    }
   }
 
   if (loading) return <div className="card">Loading...</div>;
@@ -65,12 +97,25 @@ export default function OpportunityDetailPage() {
         </div>
 
         <div className="mt-4 grid gap-2 text-sm text-slate-700">
+          {item.external_id && (
+            <div className="flex flex-wrap items-center gap-2">
+              <span>eMMA ID: <span className="font-semibold text-ink">{item.external_id}</span></span>
+              <button
+                type="button"
+                onClick={copyExternalId}
+                className="rounded-md border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700"
+              >
+                {copiedExternalId ? "Copied" : "Copy BPM ID"}
+              </button>
+            </div>
+          )}
           <div>Due date: {item.due_date || "Unknown"}</div>
           <div>Current status: {item.status}</div>
+          {item.source_status && <div>eMMA source status: {item.source_status}</div>}
           <div>Extraction confidence: {Math.round(item.extraction_confidence * 100)}%</div>
           <div>Manual review needed: {item.manual_review_needed ? "Yes" : "No"}</div>
-          <div>Source URL: <a className="underline" href={item.source_url} target="_blank" rel="noreferrer">Open source</a></div>
-          {item.opportunity_url && <div>Opportunity URL: <a className="underline" href={item.opportunity_url} target="_blank" rel="noreferrer">Open posting</a></div>}
+          <div>eMMA search: <a className="underline" href={item.opportunity_url || item.source_url} target="_blank" rel="noreferrer">Open public solicitations</a></div>
+          {item.external_id && <div className="text-xs text-slate-500">Paste the BPM ID into eMMA Public Solicitations search to find the posting.</div>}
           <div>Summary: {item.description_snippet || "No extracted snippet"}</div>
         </div>
 
@@ -79,15 +124,29 @@ export default function OpportunityDetailPage() {
             <button
               key={status}
               onClick={() => updateStatus(status)}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+              disabled={Boolean(statusUpdating) || item.status === status}
+              className={`rounded-md border px-3 py-2 text-sm disabled:cursor-not-allowed ${
+                item.status === status
+                  ? "border-navy bg-navy text-white"
+                  : "border-slate-300 text-slate-700 hover:border-navy"
+              }`}
             >
-              {status}
+              {statusUpdating === status ? "Saving..." : status}
             </button>
           ))}
-          <button onClick={runScore} className="rounded-md bg-navy px-3 py-2 text-sm text-white">
-            Re-score
+          <button
+            onClick={runScore}
+            disabled={scoring}
+            className="rounded-md bg-navy px-3 py-2 text-sm text-white disabled:cursor-not-allowed disabled:bg-slate-400"
+          >
+            {scoring ? "Scoring..." : "Re-score"}
           </button>
         </div>
+        {actionError && (
+          <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            {actionError}
+          </div>
+        )}
       </div>
 
       {checklist && (
