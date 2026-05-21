@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 
 from pydantic import BaseModel
 
@@ -14,6 +14,10 @@ class OpportunityRead(BaseModel):
     source_name: str
     source_url: str
     opportunity_url: str | None
+    external_id: str | None = None
+    source_status: str | None = None
+    last_seen_at: datetime | None = None
+    updated_at: datetime | None = None
     due_date: date | None
     description_snippet: str | None
     status: str

@@ -1,5 +1,6 @@
 import {
   DigestPreview,
+  ImportRun,
   Opportunity,
   ProposalChecklist,
   EmmaExcelImportResult,
@@ -20,6 +21,20 @@ async function fetchJson<T>(path: string, options?: RequestInit): Promise<T> {
       "Content-Type": "application/json",
       ...(options?.headers || {})
     },
+    cache: "no-store"
+  });
+  if (!res.ok) {
+    const errorBody = await res.json().catch(() => null);
+    const detail = typeof errorBody?.detail === "string" ? errorBody.detail : null;
+    throw new Error(detail || `API error: ${res.status}`);
+  }
+  return res.json();
+}
+
+async function fetchForm<T>(path: string, formData: FormData): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    body: formData,
     cache: "no-store"
   });
   if (!res.ok) {
@@ -57,6 +72,13 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ path, auto_score: autoScore })
     }),
+  uploadEmmaExcel: (file: File, autoScore = true) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("auto_score", String(autoScore));
+    return fetchForm<EmmaExcelImportResult>("/api/import/emma-excel/upload", formData);
+  },
+  getImportRuns: () => fetchJson<ImportRun[]>("/api/import/runs"),
   getSources: () => fetchJson<Source[]>("/api/sources"),
   getConfigPreview: () => fetchJson<{ business_profile: unknown; keywords: string[] }>("/api/search/config"),
   getThrottleConfig: () => fetchJson<ThrottleConfig>("/api/search/throttle"),

@@ -21,6 +21,10 @@ export type Opportunity = {
   source_name: string;
   source_url: string;
   opportunity_url?: string | null;
+  external_id?: string | null;
+  source_status?: string | null;
+  last_seen_at?: string | null;
+  updated_at?: string | null;
   due_date?: string | null;
   description_snippet?: string | null;
   status: "Saved" | "Skipped" | "Pursue" | "Watch";
@@ -105,12 +109,35 @@ export type SearchRunResult = {
 
 export type EmmaExcelImportResult = {
   ok: boolean;
+  import_run_id?: number | null;
   source: string;
+  filename?: string | null;
   rows_seen: number;
   created: number;
-  duplicates_skipped: number;
+  updated: number;
+  unchanged: number;
+  skipped: number;
+  duplicates_skipped?: number;
   scored: number;
   mock_fallback_used: boolean;
+};
+
+export type ImportRun = {
+  id: number;
+  source_name: string;
+  filename: string;
+  content_type?: string | null;
+  file_size_bytes: number;
+  file_sha256: string;
+  uploaded_at: string;
+  rows_seen: number;
+  created: number;
+  updated: number;
+  unchanged: number;
+  skipped: number;
+  scored: number;
+  status: string;
+  error_message?: string | null;
 };
 
 export type ThrottleControl = {

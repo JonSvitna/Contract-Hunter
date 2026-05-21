@@ -13,6 +13,7 @@ if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
 from app.database import Base  # noqa: E402
+from app.models.import_run import ImportRun, ImportRunItem  # noqa: F401,E402
 from app.models.opportunity import Opportunity  # noqa: F401,E402
 from app.models.score import OpportunityScore  # noqa: F401,E402
 from app.models.source import Source  # noqa: F401,E402

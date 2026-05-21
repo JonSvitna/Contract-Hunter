@@ -17,12 +17,20 @@ class Opportunity(Base):
     source_name: Mapped[str] = mapped_column(String(255), nullable=False)
     source_url: Mapped[str] = mapped_column(String(1000), nullable=False)
     opportunity_url: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    external_id: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
+    source_status: Mapped[str | None] = mapped_column(String(100), nullable=True)
     due_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     description_snippet: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(50), default="Saved", nullable=False)
     extraction_confidence: Mapped[float] = mapped_column(Float, default=0.5, nullable=False)
     manual_review_needed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+    )
+    last_seen_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     score = relationship(
         "OpportunityScore",
@@ -30,3 +38,4 @@ class Opportunity(Base):
         uselist=False,
         cascade="all, delete-orphan",
     )
+    import_items = relationship("ImportRunItem", back_populates="opportunity")

@@ -3,9 +3,11 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app import models  # noqa: F401
 from app.config import settings
 from app.database import Base, SessionLocal, engine
 from app.routes import digest, imports, opportunities, scoring, scheduler, search, sources
+from app.services.schema_maintenance import ensure_runtime_schema
 from app.services.source_service import seed_sources_if_empty
 
 
@@ -23,6 +25,7 @@ app.add_middleware(
 @app.on_event("startup")
 def startup() -> None:
     Base.metadata.create_all(bind=engine)
+    ensure_runtime_schema(engine)
     db = SessionLocal()
     try:
         seed_sources_if_empty(db)
