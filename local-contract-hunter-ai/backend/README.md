@@ -19,7 +19,7 @@ uvicorn app.main:app --reload --port 8000
 ## Environment variables
 
 - `DATABASE_URL` (optional): defaults to local SQLite.
-- `CORS_ORIGINS` (optional): comma-separated list, defaults to `http://localhost:3000`.
+- `CORS_ORIGINS` (optional): comma-separated list, defaults to local frontend URLs and `https://contract-hunter.vercel.app`.
 - `OPENAI_API_KEY` (optional): if missing, deterministic rule-based scoring is used.
 - `OPENAI_MODEL` (optional): default `gpt-4o-mini`.
 - `SEARCH_DELAY_SECONDS` (optional): default `2.0`.
