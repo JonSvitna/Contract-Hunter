@@ -76,6 +76,16 @@ export type SearchRunResult = {
   next_run_at?: string;
 };
 
+export type EmmaExcelImportResult = {
+  ok: boolean;
+  source: string;
+  rows_seen: number;
+  created: number;
+  duplicates_skipped: number;
+  scored: number;
+  mock_fallback_used: boolean;
+};
+
 export type ThrottleControl = {
   max_candidate_links: number;
   page_timeout_ms: number;

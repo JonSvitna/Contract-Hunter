@@ -1,5 +1,6 @@
 import {
   Opportunity,
+  EmmaExcelImportResult,
   SchedulerConfig,
   SchedulerStatus,
   SearchRunResult,
@@ -20,7 +21,9 @@ async function fetchJson<T>(path: string, options?: RequestInit): Promise<T> {
     cache: "no-store"
   });
   if (!res.ok) {
-    throw new Error(`API error: ${res.status}`);
+    const errorBody = await res.json().catch(() => null);
+    const detail = typeof errorBody?.detail === "string" ? errorBody.detail : null;
+    throw new Error(detail || `API error: ${res.status}`);
   }
   return res.json();
 }
@@ -44,6 +47,11 @@ export const api = {
   runSearchNow: () =>
     fetchJson<SearchRunResult>("/api/search/run-now", {
       method: "POST"
+    }),
+  importEmmaExcel: (path: string, autoScore = true) =>
+    fetchJson<EmmaExcelImportResult>("/api/import/emma-excel", {
+      method: "POST",
+      body: JSON.stringify({ path, auto_score: autoScore })
     }),
   getSources: () => fetchJson<Source[]>("/api/sources"),
   getConfigPreview: () => fetchJson<{ business_profile: unknown; keywords: string[] }>("/api/search/config"),

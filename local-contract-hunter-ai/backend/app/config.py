@@ -19,7 +19,7 @@ class Settings:
     config_dir: Path = None
 
     def __post_init__(self) -> None:
-        origins = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
+        origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")
         self.cors_origins = [origin.strip() for origin in origins if origin.strip()]
         self.db_url = os.getenv("DATABASE_URL", self.db_url)
         self.openai_api_key = os.getenv("OPENAI_API_KEY")

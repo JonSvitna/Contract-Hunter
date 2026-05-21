@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { DashboardSummary } from "@/components/DashboardSummary";
+import { EmmaExcelImportPanel } from "@/components/EmmaExcelImportPanel";
 import { OpportunityCard } from "@/components/OpportunityCard";
 import { api } from "@/lib/api";
 
@@ -10,7 +11,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-5">
-      <section className="card bg-[linear-gradient(130deg,#0b2742,#133b60)] text-white">
+      <section className="card !bg-navy text-white">
         <h2 className="text-xl font-semibold">Local Maryland Contract Intelligence</h2>
         <p className="mt-2 max-w-2xl text-sm text-slate-200">
           Focused on county, municipal, school district, library, and utility opportunities suitable for a solo cybersecurity consultancy.
@@ -25,7 +26,10 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      <DashboardSummary opportunities={opportunities} />
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <DashboardSummary opportunities={opportunities} />
+        <EmmaExcelImportPanel />
+      </div>
 
       {schedulerStatus && (
         <section className="card">
