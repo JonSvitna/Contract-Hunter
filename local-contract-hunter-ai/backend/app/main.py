@@ -8,7 +8,7 @@ from app.config import settings
 from app.database import Base, SessionLocal, engine
 from app.routes import digest, imports, opportunities, scoring, scheduler, search, sources
 from app.services.schema_maintenance import ensure_runtime_schema
-from app.services.source_service import seed_sources_if_empty
+from app.services.source_service import seed_sources_if_empty, sync_missing_seed_sources
 
 
 app = FastAPI(title=settings.app_name)
@@ -29,6 +29,7 @@ def startup() -> None:
     db = SessionLocal()
     try:
         seed_sources_if_empty(db)
+        sync_missing_seed_sources(db)
     finally:
         db.close()
 

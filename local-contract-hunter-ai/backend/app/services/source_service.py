@@ -108,3 +108,27 @@ def seed_sources_if_empty(db: Session) -> int:
         created += 1
     db.commit()
     return created
+
+
+def sync_missing_seed_sources(db: Session) -> int:
+    created = 0
+    existing_names = {name for (name,) in db.query(Source.name).all()}
+
+    for source in load_seed_sources():
+        if source["name"] in existing_names:
+            continue
+        row = Source(
+            name=source["name"],
+            url=source["url"],
+            source_type=source.get("source_type", "generic"),
+            active=source.get("active", True),
+            search_delay_seconds=source.get("search_delay_seconds", settings.search_delay_seconds),
+            notes=source.get("notes"),
+        )
+        db.add(row)
+        existing_names.add(source["name"])
+        created += 1
+
+    if created:
+        db.commit()
+    return created

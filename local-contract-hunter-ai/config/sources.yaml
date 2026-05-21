@@ -1,6 +1,90 @@
 sources:
+  - name: Allegany County Bid Postings
+    url: https://www.alleganygov.org/bids.aspx
+    source_type: generic
+    active: true
+    search_delay_seconds: 2.0
+    notes: County source
+
+  - name: Anne Arundel County Purchasing
+    url: https://www.aacounty.org/departments/purchasing/
+    source_type: generic
+    active: true
+    search_delay_seconds: 2.0
+    notes: County source
+
+  - name: Baltimore City Bid Opportunities
+    url: https://cityservices.baltimorecity.gov/suppliers/bid-opportunities
+    source_type: generic
+    active: true
+    search_delay_seconds: 2.0
+    notes: County-equivalent city source
+
   - name: Baltimore County Procurement
     url: https://www.baltimorecountymd.gov/departments/purchasing
+    source_type: generic
+    active: true
+    search_delay_seconds: 2.0
+    notes: County source
+
+  - name: Calvert County Procurement Office
+    url: https://www.calvertcountymd.gov/255/Procurement-Office
+    source_type: generic
+    active: true
+    search_delay_seconds: 2.0
+    notes: County source
+
+  - name: Caroline County Bid Opportunities
+    url: https://www.carolinemd.org/Bids.aspx
+    source_type: generic
+    active: true
+    search_delay_seconds: 2.0
+    notes: County source
+
+  - name: Carroll County Bids and Proposals
+    url: https://www.carrollcountymd.gov/government/directory/commissioners/office-of-procurement/
+    source_type: generic
+    active: true
+    search_delay_seconds: 2.0
+    notes: County source
+
+  - name: Cecil County Procurement
+    url: https://www.cecilcountymd.gov/269/Procurement
+    source_type: generic
+    active: true
+    search_delay_seconds: 2.0
+    notes: County source
+
+  - name: Charles County Procurement Bid Opportunities
+    url: https://www.charlescountymd.gov/business/procurement-bid-opportunities
+    source_type: generic
+    active: true
+    search_delay_seconds: 2.0
+    notes: County source
+
+  - name: Dorchester County Procurement Watch
+    url: https://dorchestercountymd.com/
+    source_type: generic
+    active: true
+    search_delay_seconds: 2.0
+    notes: County source; official procurement page was not obvious, expect manual review fallback
+
+  - name: Frederick County Procurement Contracts
+    url: https://www.frederickcountymd.gov/176/Procurement-Contracts
+    source_type: generic
+    active: true
+    search_delay_seconds: 2.0
+    notes: County source
+
+  - name: Garrett County Purchasing
+    url: https://www.garrettcountymd.gov/financial-services/purchasing
+    source_type: generic
+    active: true
+    search_delay_seconds: 2.0
+    notes: County source
+
+  - name: Harford County Procurement
+    url: https://www.harfordcountymd.gov/390/Procurement
     source_type: generic
     active: true
     search_delay_seconds: 2.0
@@ -13,41 +97,75 @@ sources:
     search_delay_seconds: 2.0
     notes: County source
 
-  - name: Anne Arundel County Purchasing
-    url: https://www.aacounty.org/departments/purchasing/
+  - name: Kent County Request for Proposal
+    url: https://www.kentcounty.com/government/request_for_proposal
     source_type: generic
     active: true
     search_delay_seconds: 2.0
-
-  - name: Harford County Procurement
-    url: https://www.harfordcountymd.gov/390/Procurement
-    source_type: generic
-    active: true
-    search_delay_seconds: 2.0
+    notes: County source
 
   - name: Montgomery County Procurement
     url: https://www.montgomerycountymd.gov/procurement/
     source_type: generic
     active: true
     search_delay_seconds: 2.0
+    notes: County source
 
   - name: Prince George's County Procurement
     url: https://www.princegeorgescountymd.gov/departments-offices/central-services/purchasing
     source_type: generic
     active: true
     search_delay_seconds: 2.0
+    notes: County source
 
-  - name: Frederick County Procurement
-    url: https://www.frederickcountymd.gov/176/Procurement-Contracts
+  - name: Queen Anne's County Bid Postings
+    url: https://www.qac.org/bids.aspx
     source_type: generic
     active: true
     search_delay_seconds: 2.0
+    notes: County source
 
-  - name: Carroll County Bids and Proposals
-    url: https://www.carrollcountymd.gov/government/directory/commissioners/office-of-procurement/
+  - name: St. Mary's County Procurement
+    url: https://www.stmaryscountymd.gov/procurement/
     source_type: generic
     active: true
     search_delay_seconds: 2.0
+    notes: County source
+
+  - name: Somerset County Bids and Proposals
+    url: https://www.somersetmd.us/government/bids_proposals.php
+    source_type: generic
+    active: true
+    search_delay_seconds: 2.0
+    notes: County source
+
+  - name: Talbot County Procurement Policy
+    url: https://www.talbotcountymd.gov/Topics-Of-Interest/talbot-county-procurement-policy
+    source_type: generic
+    active: true
+    search_delay_seconds: 2.0
+    notes: County source; official policy page, expect manual review fallback for live bids
+
+  - name: Washington County Office of Procurement
+    url: https://www.washco-md.net/office-of-procurement/
+    source_type: generic
+    active: true
+    search_delay_seconds: 2.0
+    notes: County source
+
+  - name: Wicomico County Bid Postings
+    url: https://www.wicomicocounty.org/Bids.aspx?CatID=All&Status=&showAllBids=on&txtSort=Category
+    source_type: generic
+    active: true
+    search_delay_seconds: 2.0
+    notes: County source
+
+  - name: Worcester County Bid Board
+    url: https://www.co.worcester.md.us/commissioners/bids
+    source_type: generic
+    active: true
+    search_delay_seconds: 2.0
+    notes: County source
 
   - name: Maryland eMMA
     url: https://emma.maryland.gov/

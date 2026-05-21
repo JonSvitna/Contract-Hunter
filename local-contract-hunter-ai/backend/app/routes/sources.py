@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.source import Source
 from app.schemas.source import SourceCreate, SourceRead, SourceUpdate
+from app.services.source_service import sync_missing_seed_sources
 
 
 router = APIRouter(prefix="/sources", tags=["sources"])
@@ -26,6 +27,11 @@ def create_source(payload: SourceCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(source)
     return source
+
+
+@router.post("/sync-defaults")
+def sync_default_sources(db: Session = Depends(get_db)):
+    return {"created": sync_missing_seed_sources(db)}
 
 
 @router.patch("/{source_id}", response_model=SourceRead)
