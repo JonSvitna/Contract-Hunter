@@ -109,10 +109,12 @@ class EmmaScraper(BaseScraper):
 
         results: list[dict] = []
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            context = browser.new_context()
-            page = context.new_page()
+            browser = None
+            context = None
             try:
+                browser = p.chromium.launch(headless=True)
+                context = browser.new_context()
+                page = context.new_page()
                 page.goto(source_url, wait_until="domcontentloaded", timeout=self.page_timeout_ms)
                 time.sleep(self.delay_seconds)
                 page_text = page.locator("body").inner_text(timeout=self.body_timeout_ms)
@@ -161,5 +163,7 @@ class EmmaScraper(BaseScraper):
                     )
                 ]
             finally:
-                context.close()
-                browser.close()
+                if context is not None:
+                    context.close()
+                if browser is not None:
+                    browser.close()

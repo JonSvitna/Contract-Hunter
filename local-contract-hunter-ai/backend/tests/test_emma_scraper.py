@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from app.scrapers import emma_scraper
 from app.scrapers.emma_scraper import EmmaScraper, normalize_emma_anchor
 
 
@@ -45,3 +46,30 @@ def test_manual_review_result_names_emma_failure():
     assert item["manual_review_needed"] is True
     assert item["extraction_confidence"] == 0.2
     assert "No public solicitation links" in item["description_snippet"]
+
+
+def test_scrape_returns_manual_review_when_browser_launch_fails(monkeypatch):
+    class FakeChromium:
+        def launch(self, headless: bool):
+            raise RuntimeError("browser failed to launch")
+
+    class FakePlaywright:
+        chromium = FakeChromium()
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback):
+            return False
+
+    monkeypatch.setattr(emma_scraper, "sync_playwright", lambda: FakePlaywright())
+
+    results = EmmaScraper().scrape(
+        source_name="Maryland eMMA",
+        source_url="https://emma.maryland.gov/",
+        keywords=["cybersecurity"],
+    )
+
+    assert len(results) == 1
+    assert results[0]["manual_review_needed"] is True
+    assert "eMMA scrape failed gracefully" in results[0]["description_snippet"]
