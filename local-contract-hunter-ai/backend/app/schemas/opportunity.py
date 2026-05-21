@@ -31,3 +31,20 @@ class OpportunityRead(BaseModel):
 
 class OpportunityStatusUpdate(BaseModel):
     status: str
+
+
+class OpportunitySearchResult(BaseModel):
+    items: list[OpportunityRead]
+    total: int
+    page: int
+    page_size: int
+    pages: int
+
+
+class OpportunitySummary(BaseModel):
+    total: int
+    pursue: int
+    watch: int
+    skipped: int
+    manual_review: int
+    upcoming_deadlines: int

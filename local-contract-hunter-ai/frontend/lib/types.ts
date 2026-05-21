@@ -33,6 +33,52 @@ export type Opportunity = {
   score?: Score | null;
 };
 
+export type OpportunitySearchParams = {
+  page?: number;
+  page_size?: number;
+  q?: string;
+  bpm_id?: string;
+  agency?: string;
+  source?: string;
+  status?: string[];
+  recommendation?: string[];
+  source_status?: string[];
+  manual_review?: boolean;
+  due_from?: string;
+  due_to?: string;
+  created_from?: string;
+  created_to?: string;
+  min_confidence?: number;
+  max_confidence?: number;
+  min_fit_score?: number;
+  max_fit_score?: number;
+  min_skill_match?: number;
+  min_solo_fit?: number;
+  min_revenue_fit?: number;
+  min_local_fit?: number;
+  max_deadline_risk?: number;
+  max_complexity_risk?: number;
+  sort?: string;
+  direction?: "asc" | "desc";
+};
+
+export type OpportunitySearchResult = {
+  items: Opportunity[];
+  total: number;
+  page: number;
+  page_size: number;
+  pages: number;
+};
+
+export type OpportunitySummary = {
+  total: number;
+  pursue: number;
+  watch: number;
+  skipped: number;
+  manual_review: number;
+  upcoming_deadlines: number;
+};
+
 export type ProposalChecklist = {
   opportunity_id: number;
   bid_recommendation: "Bid" | "Watch" | "No Bid" | "Manual Review";

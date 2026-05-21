@@ -2,6 +2,9 @@ import {
   DigestPreview,
   ImportRun,
   Opportunity,
+  OpportunitySearchParams,
+  OpportunitySearchResult,
+  OpportunitySummary,
   ProposalChecklist,
   EmmaExcelImportResult,
   SchedulerConfig,
@@ -45,8 +48,25 @@ async function fetchForm<T>(path: string, formData: FormData): Promise<T> {
   return res.json();
 }
 
+function toQueryString(params: OpportunitySearchParams): string {
+  const search = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === "") return;
+    if (Array.isArray(value)) {
+      value.filter(Boolean).forEach((item) => search.append(key, item));
+      return;
+    }
+    search.set(key, String(value));
+  });
+  const query = search.toString();
+  return query ? `?${query}` : "";
+}
+
 export const api = {
   getOpportunities: () => fetchJson<Opportunity[]>("/api/opportunities"),
+  searchOpportunities: (params: OpportunitySearchParams = {}) =>
+    fetchJson<OpportunitySearchResult>(`/api/opportunities/search${toQueryString(params)}`),
+  getOpportunitySummary: () => fetchJson<OpportunitySummary>("/api/opportunities/summary"),
   getOpportunity: (id: string | number) => fetchJson<Opportunity>(`/api/opportunities/${id}`),
   getProposalChecklist: (id: string | number) => fetchJson<ProposalChecklist>(`/api/opportunities/${id}/checklist`),
   getDigestPreview: () => fetchJson<DigestPreview>("/api/digest/preview"),

@@ -7,7 +7,13 @@ import { OpportunityCard } from "@/components/OpportunityCard";
 import { api } from "@/lib/api";
 
 export default async function DashboardPage() {
-  const opportunities = await api.getOpportunities().catch(() => []);
+  const topOpportunities = await api.searchOpportunities({
+    page: 1,
+    page_size: 6,
+    sort: "fit_score",
+    direction: "desc",
+  }).catch(() => ({ items: [], total: 0, page: 1, page_size: 6, pages: 0 }));
+  const opportunitySummary = await api.getOpportunitySummary().catch(() => null);
   const schedulerStatus = await api.getSchedulerStatus().catch(() => null);
   const digestPreview = await api.getDigestPreview().catch(() => null);
 
@@ -29,7 +35,7 @@ export default async function DashboardPage() {
       </section>
 
       <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <DashboardSummary opportunities={opportunities} />
+        <DashboardSummary summary={opportunitySummary} />
         <EmmaExcelImportPanel />
       </div>
 
@@ -50,10 +56,10 @@ export default async function DashboardPage() {
       <section>
         <h3 className="mb-3 text-lg font-semibold text-ink">Top opportunities</h3>
         <div className="grid gap-4">
-          {opportunities.slice(0, 6).map((item) => (
+          {topOpportunities.items.map((item) => (
             <OpportunityCard key={item.id} item={item} />
           ))}
-          {opportunities.length === 0 && <div className="card text-sm text-slate-600">No opportunities found yet. Run search from your backend endpoint.</div>}
+          {topOpportunities.items.length === 0 && <div className="card text-sm text-slate-600">No opportunities found yet. Run search from your backend endpoint.</div>}
         </div>
       </section>
     </div>
