@@ -5,19 +5,29 @@ import { useParams } from "next/navigation";
 
 import { ScoreBadge } from "@/components/ScoreBadge";
 import { api } from "@/lib/api";
-import { Opportunity } from "@/lib/types";
+import { Opportunity, ProposalChecklist } from "@/lib/types";
 
 const STATUSES = ["Saved", "Watch", "Pursue", "Skipped"];
+
+function leaningClass(recommendation: ProposalChecklist["bid_recommendation"]) {
+  if (recommendation === "Bid") return "bg-emerald-100 text-emerald-800";
+  if (recommendation === "Watch") return "bg-amber-100 text-amber-800";
+  if (recommendation === "No Bid") return "bg-rose-100 text-rose-800";
+  return "bg-slate-100 text-slate-700";
+}
 
 export default function OpportunityDetailPage() {
   const params = useParams<{ id: string }>();
   const [item, setItem] = useState<Opportunity | null>(null);
+  const [checklist, setChecklist] = useState<ProposalChecklist | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api
-      .getOpportunity(params.id)
-      .then(setItem)
+    Promise.all([api.getOpportunity(params.id), api.getProposalChecklist(params.id)])
+      .then(([nextItem, nextChecklist]) => {
+        setItem(nextItem);
+        setChecklist(nextChecklist);
+      })
       .finally(() => setLoading(false));
   }, [params.id]);
 
@@ -30,8 +40,12 @@ export default function OpportunityDetailPage() {
   async function runScore() {
     if (!item) return;
     await api.scoreOpportunity(item.id);
-    const refreshed = await api.getOpportunity(item.id);
+    const [refreshed, refreshedChecklist] = await Promise.all([
+      api.getOpportunity(item.id),
+      api.getProposalChecklist(item.id),
+    ]);
     setItem(refreshed);
+    setChecklist(refreshedChecklist);
   }
 
   if (loading) return <div className="card">Loading...</div>;
@@ -75,6 +89,53 @@ export default function OpportunityDetailPage() {
           </button>
         </div>
       </div>
+
+      {checklist && (
+        <div className="card">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h3 className="text-base font-semibold text-ink">Proposal checklist</h3>
+              <p className="mt-1 text-sm text-slate-700">{checklist.rationale}</p>
+            </div>
+            <span className={`rounded-full px-3 py-1 text-sm font-semibold ${leaningClass(checklist.bid_recommendation)}`}>
+              {checklist.bid_recommendation}
+            </span>
+          </div>
+
+          <div className="mt-4 grid gap-4 md:grid-cols-3">
+            <div>
+              <div className="text-sm font-medium text-ink">Risk flags</div>
+              {checklist.risk_flags.length > 0 ? (
+                <ul className="mt-1 list-disc pl-5 text-sm text-slate-700">
+                  {checklist.risk_flags.map((flag) => (
+                    <li key={flag}>{flag}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-1 text-sm text-slate-600">No major checklist risks flagged.</p>
+              )}
+            </div>
+
+            <div>
+              <div className="text-sm font-medium text-ink">Verify before bid</div>
+              <ul className="mt-1 list-disc pl-5 text-sm text-slate-700">
+                {checklist.checklist_items.map((checklistItem) => (
+                  <li key={checklistItem}>{checklistItem}</li>
+                ))}
+              </ul>
+            </div>
+
+            <div>
+              <div className="text-sm font-medium text-ink">Next actions</div>
+              <ul className="mt-1 list-disc pl-5 text-sm text-slate-700">
+                {checklist.next_actions.map((action) => (
+                  <li key={action}>{action}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="card">
         <h3 className="text-base font-semibold text-ink">Score breakdown</h3>

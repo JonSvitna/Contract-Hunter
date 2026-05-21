@@ -18,8 +18,8 @@ The MVP uses rule-based deterministic scoring first, with optional OpenAI-compat
 
 ## Positive drivers
 
-- Local government context (county, municipal, school, library, utility).
-- Cybersecurity consulting language (NIST, vulnerability, compliance, risk).
+- Local government context from the title, agency, source, or description.
+- Cybersecurity consulting language (NIST, vulnerability, compliance, risk, security, attack surface).
 - Advisory and assessment style scope.
 - Smaller budget signals.
 
@@ -28,6 +28,7 @@ The MVP uses rule-based deterministic scoring first, with optional OpenAI-compat
 - 24/7 operations and SOC monitoring expectations.
 - Large staffing or managed services style work.
 - Federal/state mega-contract context.
+- Construction, renovation, property, commodity, supply, hardware, and maintenance scopes.
 - Tight or expired deadlines.
 
 ## Recommendation logic

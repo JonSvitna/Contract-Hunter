@@ -46,11 +46,13 @@ class GenericProcurementScraper(BaseScraper):
             ]
 
         results: list[dict] = []
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            context = browser.new_context()
-            page = context.new_page()
-            try:
+        browser = None
+        context = None
+        try:
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=True)
+                context = browser.new_context()
+                page = context.new_page()
                 page.goto(source_url, wait_until="domcontentloaded", timeout=self.page_timeout_ms)
                 time.sleep(self.delay_seconds)
                 body_text = page.locator("body").inner_text(timeout=self.body_timeout_ms)
@@ -101,21 +103,23 @@ class GenericProcurementScraper(BaseScraper):
                             "manual_review_needed": True,
                         }
                     )
-            except Exception as exc:
-                results = [
-                    {
-                        "title": f"Manual review needed for {source_name}",
-                        "agency": source_name,
-                        "source_name": source_name,
-                        "source_url": source_url,
-                        "opportunity_url": source_url,
-                        "due_date": None,
-                        "description_snippet": f"Scrape failed gracefully: {str(exc)[:200]}",
-                        "extraction_confidence": 0.2,
-                        "manual_review_needed": True,
-                    }
-                ]
-            finally:
+        except Exception as exc:
+            results = [
+                {
+                    "title": f"Manual review needed for {source_name}",
+                    "agency": source_name,
+                    "source_name": source_name,
+                    "source_url": source_url,
+                    "opportunity_url": source_url,
+                    "due_date": None,
+                    "description_snippet": f"Scrape failed gracefully: {str(exc)[:200]}",
+                    "extraction_confidence": 0.2,
+                    "manual_review_needed": True,
+                }
+            ]
+        finally:
+            if context is not None:
                 context.close()
+            if browser is not None:
                 browser.close()
         return results

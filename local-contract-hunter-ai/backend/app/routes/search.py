@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, Header, HTTPException
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -23,6 +24,11 @@ from app.services.source_service import (
 router = APIRouter(prefix="/search", tags=["search"])
 
 
+class SourceValidationRequest(BaseModel):
+    source_name: str = Field(..., min_length=1)
+    auto_score: bool = True
+
+
 @router.post("/run")
 def run_search(db: Session = Depends(get_db)):
     return execute_search(db, SearchRunOptions())
@@ -33,6 +39,26 @@ def validate_emma_search(db: Session = Depends(get_db)):
     return execute_search(
         db,
         SearchRunOptions(source_type="emma", allow_mock_fallback=False, auto_score=True),
+    )
+
+
+@router.post("/validate/source")
+def validate_source_search(payload: SourceValidationRequest, db: Session = Depends(get_db)):
+    source_name = payload.source_name.strip()
+    source = db.query(Source).filter(Source.name == source_name, Source.active.is_(True)).first()
+    if not source:
+        raise HTTPException(status_code=404, detail="Active source not found")
+    if source.source_type.lower() != "generic":
+        raise HTTPException(status_code=400, detail="Source must be a configured generic local source")
+
+    return execute_search(
+        db,
+        SearchRunOptions(
+            source_type="generic",
+            source_name=source.name,
+            allow_mock_fallback=False,
+            auto_score=payload.auto_score,
+        ),
     )
 
 

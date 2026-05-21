@@ -11,6 +11,9 @@ hard_penalties:
   - large staffing requirements
   - federal mega contract
   - statewide mega contract
+  - construction or renovation work
+  - commodity supplies
+  - hardware maintenance
 recommendation_bands:
   pursue_min: 75
   watch_min: 55

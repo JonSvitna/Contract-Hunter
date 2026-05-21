@@ -8,6 +8,8 @@ from sqlalchemy.orm import Session, joinedload
 from app.database import get_db
 from app.models.opportunity import Opportunity
 from app.schemas.opportunity import OpportunityRead, OpportunityStatusUpdate
+from app.schemas.proposal_checklist import ProposalChecklistRead
+from app.services.proposal_checklist_service import build_proposal_checklist
 
 
 router = APIRouter(prefix="/opportunities", tags=["opportunities"])
@@ -28,6 +30,19 @@ def list_opportunities(db: Session = Depends(get_db)):
             except Exception:
                 opp.score.next_steps = []
     return opportunities
+
+
+@router.get("/{opportunity_id}/checklist", response_model=ProposalChecklistRead)
+def get_opportunity_checklist(opportunity_id: int, db: Session = Depends(get_db)):
+    opp = (
+        db.query(Opportunity)
+        .options(joinedload(Opportunity.score))
+        .filter(Opportunity.id == opportunity_id)
+        .first()
+    )
+    if not opp:
+        raise HTTPException(status_code=404, detail="Opportunity not found")
+    return build_proposal_checklist(opp)
 
 
 @router.get("/{opportunity_id}", response_model=OpportunityRead)

@@ -1,5 +1,7 @@
 import {
+  DigestPreview,
   Opportunity,
+  ProposalChecklist,
   EmmaExcelImportResult,
   SchedulerConfig,
   SchedulerStatus,
@@ -31,6 +33,8 @@ async function fetchJson<T>(path: string, options?: RequestInit): Promise<T> {
 export const api = {
   getOpportunities: () => fetchJson<Opportunity[]>("/api/opportunities"),
   getOpportunity: (id: string | number) => fetchJson<Opportunity>(`/api/opportunities/${id}`),
+  getProposalChecklist: (id: string | number) => fetchJson<ProposalChecklist>(`/api/opportunities/${id}/checklist`),
+  getDigestPreview: () => fetchJson<DigestPreview>("/api/digest/preview"),
   setStatus: (id: number, status: string) =>
     fetchJson<Opportunity>(`/api/opportunities/${id}/status`, {
       method: "PATCH",

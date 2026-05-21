@@ -9,6 +9,11 @@ from app.services.ai_service import ai_service
 
 POSITIVE_SKILLS = [
     "cyber",
+    "cybersecurity",
+    "security",
+    "security software",
+    "cloud-based protection",
+    "attack surface",
     "vulnerability",
     "nist",
     "cmmc",
@@ -18,6 +23,7 @@ POSITIVE_SKILLS = [
     "grc",
     "compliance",
     "assessment",
+    "information technology",
 ]
 
 NEGATIVE_TERMS = [
@@ -30,6 +36,16 @@ NEGATIVE_TERMS = [
     "team of",
     "federal",
     "statewide",
+    "construction",
+    "renovation",
+    "property improvements",
+    "facility",
+    "fence",
+    "commodity",
+    "maintenance",
+    "supplies",
+    "hardware",
+    "installation",
 ]
 
 
@@ -50,7 +66,16 @@ def _recommendation(fit_score: int, deadline_risk: int, complexity_risk: int) ->
 
 
 def score_opportunity(opportunity: Opportunity, profile: dict) -> dict:
-    text = f"{opportunity.title} {opportunity.description_snippet or ''}".lower()
+    text = " ".join(
+        part
+        for part in [
+            opportunity.title,
+            opportunity.agency,
+            opportunity.source_name,
+            opportunity.description_snippet or "",
+        ]
+        if part
+    ).lower()
 
     local_fit = 85 if "maryland" in text or "county" in text or "municipal" in text else 60
     skill_hits = sum(1 for kw in POSITIVE_SKILLS if kw in text)
@@ -103,7 +128,8 @@ def score_opportunity(opportunity: Opportunity, profile: dict) -> dict:
         "Return strict JSON with keys fit_score, skill_match, solo_fit, revenue_fit, "
         "local_fit, deadline_risk, complexity_risk, past_performance_risk, recommendation, "
         "reasoning, next_steps based on this opportunity and profile. "
-        f"Opportunity: {opportunity.title} | {opportunity.description_snippet or ''}. "
+        f"Opportunity: {opportunity.title} | Agency: {opportunity.agency} | "
+        f"Source: {opportunity.source_name} | Description: {opportunity.description_snippet or ''}. "
         f"Profile: {json.dumps(profile)}"
     )
     if ai_payload:

@@ -83,22 +83,30 @@ export function EmmaExcelImportPanel() {
       </button>
 
       {result && (
-        <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
-          <div className="rounded-lg bg-slate-50 p-3">
-            <div className="text-xs text-slate-500">Rows read</div>
-            <div className="text-lg font-semibold text-ink">{result.rows_seen}</div>
+        <div className="mt-4 space-y-3">
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+            <div className="text-sm font-semibold text-emerald-900">Import complete</div>
+            <div className="mt-1 text-xs text-emerald-800">
+              {result.created} new opportunities imported from {result.source}.
+            </div>
           </div>
-          <div className="rounded-lg bg-emerald-50 p-3">
-            <div className="text-xs text-emerald-700">Created</div>
-            <div className="text-lg font-semibold text-emerald-900">{result.created}</div>
-          </div>
-          <div className="rounded-lg bg-amber-50 p-3">
-            <div className="text-xs text-amber-700">Skipped</div>
-            <div className="text-lg font-semibold text-amber-900">{result.duplicates_skipped}</div>
-          </div>
-          <div className="rounded-lg bg-blue-50 p-3">
-            <div className="text-xs text-blue-700">Scored</div>
-            <div className="text-lg font-semibold text-blue-900">{result.scored}</div>
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <div className="rounded-lg bg-slate-50 p-3">
+              <div className="text-xs text-slate-500">Rows read</div>
+              <div className="text-lg font-semibold text-ink">{result.rows_seen}</div>
+            </div>
+            <div className="rounded-lg bg-emerald-50 p-3">
+              <div className="text-xs text-emerald-700">Created</div>
+              <div className="text-lg font-semibold text-emerald-900">{result.created}</div>
+            </div>
+            <div className="rounded-lg bg-amber-50 p-3">
+              <div className="text-xs text-amber-700">Skipped</div>
+              <div className="text-lg font-semibold text-amber-900">{result.duplicates_skipped}</div>
+            </div>
+            <div className="rounded-lg bg-blue-50 p-3">
+              <div className="text-xs text-blue-700">Scored</div>
+              <div className="text-lg font-semibold text-blue-900">{result.scored}</div>
+            </div>
           </div>
         </div>
       )}

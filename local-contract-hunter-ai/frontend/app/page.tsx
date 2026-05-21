@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { DashboardSummary } from "@/components/DashboardSummary";
+import { DigestPreviewCard } from "@/components/DigestPreviewCard";
 import { EmmaExcelImportPanel } from "@/components/EmmaExcelImportPanel";
 import { OpportunityCard } from "@/components/OpportunityCard";
 import { api } from "@/lib/api";
@@ -8,6 +9,7 @@ import { api } from "@/lib/api";
 export default async function DashboardPage() {
   const opportunities = await api.getOpportunities().catch(() => []);
   const schedulerStatus = await api.getSchedulerStatus().catch(() => null);
+  const digestPreview = await api.getDigestPreview().catch(() => null);
 
   return (
     <div className="space-y-5">
@@ -26,10 +28,12 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
         <DashboardSummary opportunities={opportunities} />
         <EmmaExcelImportPanel />
       </div>
+
+      <DigestPreviewCard preview={digestPreview} />
 
       {schedulerStatus && (
         <section className="card">

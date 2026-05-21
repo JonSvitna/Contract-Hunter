@@ -2,7 +2,7 @@ import { Opportunity } from "@/lib/types";
 
 function stat(label: string, value: number | string) {
   return (
-    <div className="card">
+    <div className="card min-h-[96px]">
       <div className="text-xs uppercase tracking-wider text-slate-500">{label}</div>
       <div className="mt-2 text-2xl font-semibold text-ink">{value}</div>
     </div>
@@ -19,7 +19,7 @@ export function DashboardSummary({ opportunities }: { opportunities: Opportunity
   }).length;
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {stat("Total Opportunities", opportunities.length)}
       {stat("Strong Pursue", pursue)}
       {stat("Watch", watch)}

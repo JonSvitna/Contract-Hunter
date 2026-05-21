@@ -29,6 +29,33 @@ export type Opportunity = {
   score?: Score | null;
 };
 
+export type ProposalChecklist = {
+  opportunity_id: number;
+  bid_recommendation: "Bid" | "Watch" | "No Bid" | "Manual Review";
+  checklist_items: string[];
+  risk_flags: string[];
+  next_actions: string[];
+  rationale: string;
+};
+
+export type DigestCandidate = {
+  id: number;
+  title: string;
+  agency: string;
+  source_name: string;
+  opportunity_url?: string | null;
+  due_date?: string | null;
+  status: Opportunity["status"];
+  fit_score: number;
+  recommendation: Recommendation;
+  reasoning: string;
+};
+
+export type DigestPreview = {
+  generated_at: string;
+  candidates: DigestCandidate[];
+};
+
 export type Source = {
   id: number;
   name: string;
