@@ -38,17 +38,19 @@ class Settings:
         browser_channel = os.getenv("PLAYWRIGHT_BROWSER_CHANNEL")
         self.playwright_browser_channel = browser_channel.strip() or None if browser_channel else None
         self.sam_gov_api_key = os.getenv("SAM_GOV_API_KEY")
-        # Support two layouts:
-        #   local dev:  local-contract-hunter-ai/backend/app/config.py → parents[2]=backend → ../config
-        #   Railway:    /app/backend/app/config.py → parents[2]=/app → /app/config
-        this_file = Path(__file__).resolve()
-        for ancestor in [this_file.parents[2], this_file.parents[3]]:
-            candidate = ancestor / "config"
-            if candidate.exists():
-                self.config_dir = candidate
-                break
+        # CONFIG_DIR env var wins; otherwise walk up until we find a config/ dir
+        env_config = os.getenv("CONFIG_DIR")
+        if env_config:
+            self.config_dir = Path(env_config)
         else:
-            self.config_dir = this_file.parents[2] / "config"
+            this_file = Path(__file__).resolve()
+            for ancestor in [this_file.parents[2], this_file.parents[3]]:
+                candidate = ancestor / "config"
+                if candidate.exists():
+                    self.config_dir = candidate
+                    break
+            else:
+                self.config_dir = this_file.parents[2] / "config"
 
 
 settings = Settings()
