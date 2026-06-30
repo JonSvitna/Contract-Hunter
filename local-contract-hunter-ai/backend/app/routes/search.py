@@ -39,6 +39,19 @@ def run_search(db: Session = Depends(get_db)):
     return execute_search(db, SearchRunOptions())
 
 
+@router.post("/run-samgov")
+def run_samgov_search(db: Session = Depends(get_db)):
+    return execute_search(
+        db,
+        SearchRunOptions(
+            source_type="samgov",
+            allow_mock_fallback=False,
+            auto_score=True,
+            run_kind="manual",
+        ),
+    )
+
+
 @router.post("/validate/emma")
 def validate_emma_search(db: Session = Depends(get_db)):
     return execute_search(
