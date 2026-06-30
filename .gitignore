@@ -5,3 +5,7 @@ __pycache__/
 *.py[cod]
 .DS_Store
 **/.DS_Store
+.env
+**/.env
+*.env
+local_contract_hunter.db

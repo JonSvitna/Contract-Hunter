@@ -14,6 +14,7 @@ from app.models.source_run import SourceRun, SourceRunItem
 from app.scrapers.civicengage_bid_scraper import CivicEngageBidScraper
 from app.scrapers.emma_scraper import EmmaScraper
 from app.scrapers.generic_procurement_scraper import GenericProcurementScraper
+from app.scrapers.samgov_scraper import SamGovScraper
 from app.services.score_persistence import score_and_store_opportunity
 from app.services.source_service import (
     get_effective_throttle_for_source,
@@ -60,6 +61,9 @@ def mock_candidates(source_name: str, source_url: str) -> list[dict]:
 
 
 def get_scraper_for_source(source: Source):
+    if source.source_type.lower() == "samgov":
+        return SamGovScraper(delay_seconds=source.search_delay_seconds or 1.0)
+
     throttle = get_effective_throttle_for_source(source.name)
     kwargs = {
         "delay_seconds": source.search_delay_seconds,
@@ -89,21 +93,17 @@ def _query_sources(db: Session, options: SearchRunOptions) -> list[Source]:
 
 
 def _is_duplicate(db: Session, item: dict) -> bool:
-    return (
-        db.query(Opportunity)
-        .filter(
-            or_(
-                Opportunity.opportunity_url == item.get("opportunity_url"),
-                and_(
-                    Opportunity.title == item.get("title"),
-                    Opportunity.agency == item.get("agency"),
-                    Opportunity.due_date == item.get("due_date"),
-                ),
-            )
-        )
-        .first()
-        is not None
-    )
+    filters = [
+        Opportunity.opportunity_url == item.get("opportunity_url"),
+        and_(
+            Opportunity.title == item.get("title"),
+            Opportunity.agency == item.get("agency"),
+            Opportunity.due_date == item.get("due_date"),
+        ),
+    ]
+    if item.get("external_id"):
+        filters.append(Opportunity.external_id == item["external_id"])
+    return db.query(Opportunity).filter(or_(*filters)).first() is not None
 
 
 def _create_opportunity(db: Session, source: Source, item: dict) -> Opportunity:
@@ -113,6 +113,8 @@ def _create_opportunity(db: Session, source: Source, item: dict) -> Opportunity:
         source_name=source.name,
         source_url=source.url,
         opportunity_url=item.get("opportunity_url"),
+        external_id=item.get("external_id"),
+        source_status=item.get("source_status"),
         due_date=item.get("due_date"),
         description_snippet=item.get("description_snippet"),
         extraction_confidence=item.get("extraction_confidence", 0.4),

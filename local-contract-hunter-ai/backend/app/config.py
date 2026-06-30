@@ -23,6 +23,7 @@ class Settings:
     search_delay_seconds: float = 2.0
     playwright_browser_channel: str | None = None
     config_dir: Path = None
+    sam_gov_api_key: str | None = None
 
     def __post_init__(self) -> None:
         origins = os.getenv("CORS_ORIGINS", DEFAULT_CORS_ORIGINS).split(",")
@@ -36,6 +37,7 @@ class Settings:
         )
         browser_channel = os.getenv("PLAYWRIGHT_BROWSER_CHANNEL")
         self.playwright_browser_channel = browser_channel.strip() or None if browser_channel else None
+        self.sam_gov_api_key = os.getenv("SAM_GOV_API_KEY")
         base_dir = Path(__file__).resolve().parents[2]
         self.config_dir = base_dir / "config"
 

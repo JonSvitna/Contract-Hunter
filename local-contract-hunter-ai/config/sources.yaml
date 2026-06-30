@@ -191,3 +191,10 @@ sources:
     source_type: generic
     active: true
     search_delay_seconds: 2.0
+
+  - name: SAM.gov Federal Opportunities
+    url: https://sam.gov/search/?index=opp&sort=-modifiedDate&sfm%5Bstatus%5D%5Bis_active%5D=true
+    source_type: samgov
+    active: true
+    search_delay_seconds: 1.0
+    notes: Federal solicitations via SAM.gov API — NAICS 541519/541512/541690/541330 + CMMC keywords. Requires SAM_GOV_API_KEY env var.
