@@ -4,6 +4,7 @@ import time
 from datetime import datetime, timedelta
 
 import requests
+from requests import RequestException
 
 from app.config import settings
 from app.scrapers.base_scraper import BaseScraper
@@ -109,7 +110,15 @@ class SamGovScraper(BaseScraper):
                 resp = requests.get(SAM_GOV_API_URL, params=params, timeout=20)
                 resp.raise_for_status()
                 data = resp.json()
-            except Exception:
+            except requests.HTTPError as exc:
+                status_code = exc.response.status_code if exc.response is not None else None
+                if status_code in {400, 401, 403}:
+                    detail = self._response_detail(exc.response)
+                    raise RuntimeError(
+                        f"SAM.gov API request failed ({status_code}): {detail}"
+                    ) from exc
+                break
+            except RequestException:
                 break
 
             opps = data.get("opportunitiesData") or []
@@ -161,3 +170,18 @@ class SamGovScraper(BaseScraper):
                 break
 
             time.sleep(self.delay_seconds)
+
+    @staticmethod
+    def _response_detail(response: requests.Response | None) -> str:
+        if response is None:
+            return "no response body"
+        try:
+            payload = response.json()
+            for key in ("error", "message", "error_description", "detail"):
+                value = payload.get(key)
+                if isinstance(value, str) and value.strip():
+                    return value.strip()[:300]
+            return str(payload)[:300]
+        except ValueError:
+            text = (response.text or "").strip()
+            return text[:300] if text else "empty response body"

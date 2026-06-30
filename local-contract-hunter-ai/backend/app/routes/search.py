@@ -41,6 +41,17 @@ def run_search(db: Session = Depends(get_db)):
 
 @router.post("/run-samgov")
 def run_samgov_search(db: Session = Depends(get_db)):
+    if not settings.sam_gov_api_key:
+        raise HTTPException(status_code=400, detail="SAM_GOV_API_KEY is not configured")
+
+    source = (
+        db.query(Source)
+        .filter(Source.active.is_(True), Source.source_type.ilike("samgov"))
+        .first()
+    )
+    if not source:
+        raise HTTPException(status_code=404, detail="Active SAM.gov source not found")
+
     return execute_search(
         db,
         SearchRunOptions(

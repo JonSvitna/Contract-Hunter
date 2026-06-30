@@ -85,3 +85,71 @@ def test_validate_source_route_rejects_non_generic_source(db_session, monkeypatc
 
     assert response.status_code == 400
     assert "generic local source" in response.json()["detail"]
+
+
+def test_run_samgov_requires_api_key(db_session, monkeypatch):
+    source = Source(
+        name="SAM.gov Federal Opportunities",
+        url="https://sam.gov/search/?index=opp",
+        source_type="samgov",
+        active=True,
+        search_delay_seconds=1.0,
+    )
+    db_session.add(source)
+    db_session.commit()
+
+    monkeypatch.setattr(search_routes.settings, "sam_gov_api_key", None)
+
+    response = make_client(db_session).post("/api/search/run-samgov")
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "SAM_GOV_API_KEY is not configured"
+
+
+def test_run_samgov_requires_active_source(db_session, monkeypatch):
+    monkeypatch.setattr(search_routes.settings, "sam_gov_api_key", "test-key")
+
+    response = make_client(db_session).post("/api/search/run-samgov")
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Active SAM.gov source not found"
+
+
+def test_run_samgov_executes_search_with_expected_options(db_session, monkeypatch):
+    source = Source(
+        name="SAM.gov Federal Opportunities",
+        url="https://sam.gov/search/?index=opp",
+        source_type="samgov",
+        active=True,
+        search_delay_seconds=1.0,
+    )
+    db_session.add(source)
+    db_session.commit()
+    captured_options = []
+
+    def fake_execute_search(db, options):
+        assert db is db_session
+        captured_options.append(options)
+        return {
+            "ok": True,
+            "created": 2,
+            "duplicates_skipped": 1,
+            "sources": 1,
+            "profile_name": "Sean",
+            "scored": 2,
+            "mock_fallback_used": False,
+            "diagnostics": [],
+        }
+
+    monkeypatch.setattr(search_routes.settings, "sam_gov_api_key", "test-key")
+    monkeypatch.setattr(search_routes, "execute_search", fake_execute_search)
+
+    response = make_client(db_session).post("/api/search/run-samgov")
+
+    assert response.status_code == 200
+    assert response.json()["created"] == 2
+    assert len(captured_options) == 1
+    assert captured_options[0].source_type == "samgov"
+    assert captured_options[0].allow_mock_fallback is False
+    assert captured_options[0].auto_score is True
+    assert captured_options[0].run_kind == "manual"
