@@ -1,0 +1,1 @@
+-r local-contract-hunter-ai/backend/requirements.txt
