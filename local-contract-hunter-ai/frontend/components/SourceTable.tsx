@@ -51,6 +51,7 @@ function resultMessage(result: SearchRunResult): string {
 export function SourceTable({ initialItems, loadError }: SourceTableProps) {
   const [items, setItems] = useState(initialItems);
   const [validatingId, setValidatingId] = useState<number | null>(null);
+  const [runningSamGov, setRunningSamGov] = useState(false);
   const [rowErrors, setRowErrors] = useState<Record<number, string>>({});
   const [rowMessages, setRowMessages] = useState<Record<number, string>>({});
 
@@ -66,6 +67,25 @@ export function SourceTable({ initialItems, loadError }: SourceTableProps) {
       }).length,
     };
   }, [items]);
+
+  async function runSamGov(source: SourceDashboardItem) {
+    setRunningSamGov(true);
+    setRowErrors((current) => ({ ...current, [source.id]: "" }));
+    setRowMessages((current) => ({ ...current, [source.id]: "" }));
+    try {
+      const result = await api.runSamGov();
+      setRowMessages((current) => ({ ...current, [source.id]: resultMessage(result) }));
+      const refreshed = await api.getSourceDashboard();
+      setItems(refreshed.items);
+    } catch (error) {
+      setRowErrors((current) => ({
+        ...current,
+        [source.id]: error instanceof Error ? error.message : "SAM.gov run failed.",
+      }));
+    } finally {
+      setRunningSamGov(false);
+    }
+  }
 
   async function validateSource(source: SourceDashboardItem) {
     setValidatingId(source.id);
@@ -137,6 +157,7 @@ export function SourceTable({ initialItems, loadError }: SourceTableProps) {
             {items.map((source) => {
               const run = source.last_run;
               const canValidate = source.active && source.source_type.toLowerCase() === "generic";
+              const isSamGov = source.source_type.toLowerCase() === "samgov";
               return (
                 <tr key={source.id} className={`border-b border-slate-100 align-top ${runTone(source)}`}>
                   <td className="py-3 pr-3">
@@ -183,6 +204,15 @@ export function SourceTable({ initialItems, loadError }: SourceTableProps) {
                         className="rounded-md bg-navy px-3 py-2 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-400"
                       >
                         {validatingId === source.id ? "Validating..." : "Validate"}
+                      </button>
+                    ) : isSamGov ? (
+                      <button
+                        type="button"
+                        onClick={() => runSamGov(source)}
+                        disabled={runningSamGov}
+                        className="rounded-md bg-sage px-3 py-2 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-400"
+                      >
+                        {runningSamGov ? "Running..." : "Run SAM.gov"}
                       </button>
                     ) : (
                       <span className="text-xs text-slate-500">Not available</span>

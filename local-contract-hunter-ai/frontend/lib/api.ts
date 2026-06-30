@@ -87,6 +87,10 @@ export const api = {
     fetchJson<{ created: number; duplicates_skipped: number; sources: number }>("/api/search/run", {
       method: "POST"
     }),
+  runSamGov: () =>
+    fetchJson<SearchRunResult>("/api/search/run-samgov", {
+      method: "POST"
+    }),
   runSearchNow: () =>
     fetchJson<SearchRunResult>("/api/search/run-now", {
       method: "POST"
