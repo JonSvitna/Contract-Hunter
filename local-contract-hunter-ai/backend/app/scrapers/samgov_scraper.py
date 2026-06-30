@@ -54,13 +54,14 @@ class SamGovScraper(BaseScraper):
         seen_ids: set[str] = set()
 
         # Pass 1: search by NAICS code
+        # ptype codes: p=presolicitation, o=solicitation, k=combined synopsis
         for naics in NAICS_CODES:
             self._fetch_pages(
                 params_base={
                     "naics": naics,
                     "postedFrom": posted_from,
                     "postedTo": posted_to,
-                    "ptype": "sol,presol",
+                    "ptype": "p,o,k",
                     "limit": 100,
                 },
                 source_name=source_name,
@@ -76,7 +77,7 @@ class SamGovScraper(BaseScraper):
                     "q": keyword,
                     "postedFrom": posted_from,
                     "postedTo": posted_to,
-                    "ptype": "sol,presol",
+                    "ptype": "p,o,k",
                     "limit": 100,
                 },
                 source_name=source_name,
